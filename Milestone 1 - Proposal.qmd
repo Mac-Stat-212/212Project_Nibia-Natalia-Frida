@@ -11,75 +11,66 @@ Tree Coverage Loss: A Study on the Brazilian Amazon
 
 ### Questions:
 
-1. How has the tree coverage changed, from years 2000-2023, depending on the Brazilian administration?
-\
-\
-2. What is the relationship between tree coverage and the amount of policy instruments implemented per year in Brazil?
+1.  How has the tree coverage changed, from years 2000-2023, depending on the Brazilian administration?\
+    \
+2.  What is the relationship between tree coverage and the amount of policy instruments implemented per year in Brazil?
 
 ## Data
 
 Global Forest Watch - Brazil
+
 ```{r}
 # read
 ```
 
 Policy Instruments for the Environment (PINE) Database
+
 ```{r}
 # read
 ```
 
 ## Data Context
+
 ### Global Forest Watch
 
-**Who? ** 
+**Who?** \
+Global Forest Watch is an online platform that provides data and tools for monitoring forests. GFW allows anyone to access near real-time information about where and how forests are changing around the world. Thousands of people around the world, from researchers to environmental organizations, use GFW every day to monitor and manage forests, call out unsustainable activities, and conduct research at the forefront of conservation.\
 \
-Global Forest Watch is an online platform that provides data and tools for monitoring forests. GFW allows anyone to access near real-time information about where and how forests are changing around the world. 
-Thousands of people around the world, from researchers to environmental organizations, use GFW every day to monitor and manage forests, call out unsustainable activities, and conduct research at the forefront of conservation.
+**What?**\
+- Tree cover data, which measures the extent of tree-covered land in Brazil from 2000 to 2023\
+- Deforestation data, which cracks the loss of natural forests over time, including how much land has been cleared and the associated CO₂ emissions\
+- Some variables:\
 \
+1. Tree cover loss is defined as “stand replacement disturbance” which is considered to be clearing of at least half of tree cover within a 30-meter pixel.\
 \
-**What?** 
+2. Carbon densities, emissions, removals, and net flux (megagrams CO2e/yr) are from Harris et al. 2021.\
 \
-- Tree cover data, which measures the extent of tree-covered land in Brazil from 2000 to 2023
+3. The emissions data quantifies the amount of carbon dioxide emissions to the atmosphere where forest disturbances have occurred, and includes CO2, CH4, and N2O and multiple carbon pools.\
 \
-- Deforestation data, which cracks the loss of natural forests over time, including how much land has been cleared and the associated CO₂ emissions 
+4. Removals includes the average annual carbon captured by aboveground and belowground woody biomass in forests.\
 \
-- Some variables:
+5. Net flux is the difference between average annual emissions and average annual removals; negative values are net sinks and positive values are net sources.\
 \
+**When?**\
+2000 - 2023\
 \
-1. Tree cover loss is defined as “stand replacement disturbance” which is considered to be clearing of at least half of tree cover within a 30-meter pixel. 
+**Where?**\
+Brazil\
 \
+**Why?**\
+It is important to understand deforestation trends, their consequences and the impact policies have on this phenomenon.\
 \
-2. Carbon densities, emissions, removals, and net flux (megagrams CO2e/yr) are from Harris et al. 2021. 
-\
-\
-3. The emissions data quantifies the amount of carbon dioxide emissions to the atmosphere where forest disturbances have occurred, and includes CO2, CH4, and N2O and multiple carbon pools. 
-\
-\
-4. Removals includes the average annual carbon captured by aboveground and belowground woody biomass in forests. 
-\
-\
-5. Net flux is the difference between average annual emissions and average annual removals; negative values are net sinks and positive values are net sources.
-\
-\
-**When?**
-\
-2000 - 2023
-\
-\
-**Where?**
-\
-Brazil
-\
-\
-**Why?**
-\
-It is important to understand deforestation trends, their consequences and the impact policies have on this phenomenon. 
-\
-\
-**How?**
-\
+**How?**\
 The tree cover data was produced by the University of Maryland's GLAD laboratory in partnership with Google.
 
 ## Plan
+
+- Explore the data, and perform initial wrangling and figures for our datasets. 
+
+- Define presidential change (and how their politics, or ascend to power impacted environmental policies).
+
+- Join datasets and start preparing for initial figures.
+
+- We found a shape file for Brazil from a different datasource. It would be interesting to apply our findings on the specific regions of interest and display what we learned.
 
 

@@ -118,23 +118,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="data" class="level2">
 <h2 class="anchored" data-anchor-id="data">Data</h2>
-<p>Global Forest Watch - Brazil</p>
+<section id="loading-packages" class="level4">
+<h4 class="anchored" data-anchor-id="loading-packages">Loading Packages</h4>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Policy Instruments for the Environment (PINE) Database</p>
+<section id="global-forest-watch---brazil" class="level6">
+<h6 class="anchored" data-anchor-id="global-forest-watch---brazil">Global Forest Watch - Brazil</h6>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read dataset</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>BR_TreeCoverLoss <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"./Brazil_TreeCoverLoss.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(BR_TreeCoverLoss)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 31
+  country subnational1 subnational2 threshold area_ha extent_2000_ha
+  &lt;chr&gt;   &lt;chr&gt;        &lt;chr&gt;            &lt;dbl&gt;   &lt;dbl&gt;          &lt;dbl&gt;
+1 Brazil  Acre         Acrelândia           0  158571         158571
+2 Brazil  Acre         Acrelândia          10  158571         124431
+3 Brazil  Acre         Acrelândia          15  158571         123853
+4 Brazil  Acre         Acrelândia          20  158571         123228
+5 Brazil  Acre         Acrelândia          25  158571         122874
+6 Brazil  Acre         Acrelândia          30  158571         122285
+# ℹ 25 more variables: extent_2010_ha &lt;dbl&gt;, `gain_2000-2020_ha` &lt;dbl&gt;,
+#   tc_loss_ha_2001 &lt;dbl&gt;, tc_loss_ha_2002 &lt;dbl&gt;, tc_loss_ha_2003 &lt;dbl&gt;,
+#   tc_loss_ha_2004 &lt;dbl&gt;, tc_loss_ha_2005 &lt;dbl&gt;, tc_loss_ha_2006 &lt;dbl&gt;,
+#   tc_loss_ha_2007 &lt;dbl&gt;, tc_loss_ha_2008 &lt;dbl&gt;, tc_loss_ha_2009 &lt;dbl&gt;,
+#   tc_loss_ha_2010 &lt;dbl&gt;, tc_loss_ha_2011 &lt;dbl&gt;, tc_loss_ha_2012 &lt;dbl&gt;,
+#   tc_loss_ha_2013 &lt;dbl&gt;, tc_loss_ha_2014 &lt;dbl&gt;, tc_loss_ha_2015 &lt;dbl&gt;,
+#   tc_loss_ha_2016 &lt;dbl&gt;, tc_loss_ha_2017 &lt;dbl&gt;, tc_loss_ha_2018 &lt;dbl&gt;, …</code></pre>
 </div>
+</div>
+</section>
+</section>
 </section>
 <section id="data-context" class="level2">
 <h2 class="anchored" data-anchor-id="data-context">Data Context</h2>
 <section id="global-forest-watch" class="level3">
 <h3 class="anchored" data-anchor-id="global-forest-watch">Global Forest Watch</h3>
-<p><strong>Who?</strong><br>
-Global Forest Watch is an online platform that provides data and tools for monitoring forests. GFW allows anyone to access near real-time information about where and how forests are changing around the world. Thousands of people around the world, from researchers to environmental organizations, use GFW every day to monitor and manage forests, call out unsustainable activities, and conduct research at the forefront of conservation.<br>
+<section id="who" class="level6">
+<h6 class="anchored" data-anchor-id="who"><strong>Who?</strong><br>
+</h6>
+<p>Global Forest Watch is an online platform that provides data and tools for monitoring forests. GFW allows anyone to access near real-time information about where and how forests are changing around the world. Thousands of people around the world, from researchers to environmental organizations, use GFW every day to monitor and manage forests, call out unsustainable activities, and conduct research at the forefront of conservation.<br>
 <br>
-<strong>What?</strong><br>
+###### <strong>What?</strong><br>
 - Tree cover data, which measures the extent of tree-covered land in Brazil from 2000 to 2023<br>
 - Deforestation data, which cracks the loss of natural forests over time, including how much land has been cleared and the associated CO₂ emissions<br>
 - Some variables:<br>
@@ -149,17 +175,18 @@ Global Forest Watch is an online platform that provides data and tools for monit
 <br>
 5. Net flux is the difference between average annual emissions and average annual removals; negative values are net sinks and positive values are net sources.<br>
 <br>
-<strong>When?</strong><br>
+###### <strong>When?</strong><br>
 2000 - 2023<br>
 <br>
-<strong>Where?</strong><br>
+###### <strong>Where?</strong><br>
 Brazil<br>
 <br>
-<strong>Why?</strong><br>
+###### <strong>Why?</strong><br>
 It is important to understand deforestation trends, their consequences and the impact policies have on this phenomenon.<br>
 <br>
-<strong>How?</strong><br>
+###### <strong>How?</strong><br>
 The tree cover data was produced by the University of Maryland’s GLAD laboratory in partnership with Google.</p>
+</section>
 </section>
 </section>
 <section id="plan" class="level2">

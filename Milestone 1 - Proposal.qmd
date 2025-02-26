@@ -17,26 +17,27 @@ Tree Coverage Loss: A Study on the Brazilian Amazon
 
 ## Data
 
-Global Forest Watch - Brazil
-
-```{r}
-# read
+#### Loading Packages
+```{r, message=FALSE}
+library(tidyverse)
 ```
 
-Policy Instruments for the Environment (PINE) Database
 
-```{r}
-# read
+###### Global Forest Watch - Brazil
+
+```{r, message=FALSE}
+# read dataset
+BR_TreeCoverLoss <- read_csv("./Brazil_TreeCoverLoss.csv")
+head(BR_TreeCoverLoss)
 ```
-
 ## Data Context
 
 ### Global Forest Watch
 
-**Who?** \
+###### **Who?**\
 Global Forest Watch is an online platform that provides data and tools for monitoring forests. GFW allows anyone to access near real-time information about where and how forests are changing around the world. Thousands of people around the world, from researchers to environmental organizations, use GFW every day to monitor and manage forests, call out unsustainable activities, and conduct research at the forefront of conservation.\
 \
-**What?**\
+###### **What?**\
 - Tree cover data, which measures the extent of tree-covered land in Brazil from 2000 to 2023\
 - Deforestation data, which cracks the loss of natural forests over time, including how much land has been cleared and the associated CO₂ emissions\
 - Some variables:\
@@ -51,26 +52,24 @@ Global Forest Watch is an online platform that provides data and tools for monit
 \
 5. Net flux is the difference between average annual emissions and average annual removals; negative values are net sinks and positive values are net sources.\
 \
-**When?**\
+###### **When?**\
 2000 - 2023\
 \
-**Where?**\
+###### **Where?**\
 Brazil\
 \
-**Why?**\
+###### **Why?**\
 It is important to understand deforestation trends, their consequences and the impact policies have on this phenomenon.\
 \
-**How?**\
+###### **How?**\
 The tree cover data was produced by the University of Maryland's GLAD laboratory in partnership with Google.
 
 ## Plan
 
-- Explore the data, and perform initial wrangling and figures for our datasets. 
+-   Explore the data, and perform initial wrangling and figures for our datasets.
 
-- Define presidential change (and how their politics, or ascend to power impacted environmental policies).
+-   Define presidential change (and how their politics, or ascend to power impacted environmental policies).
 
-- Join datasets and start preparing for initial figures.
+-   Join datasets and start preparing for initial figures.
 
-- We found a shape file for Brazil from a different datasource. It would be interesting to apply our findings on the specific regions of interest and display what we learned.
-
-
+-   We found a shape file for Brazil from a different datasource. It would be interesting to apply our findings on the specific regions of interest and display what we learned.

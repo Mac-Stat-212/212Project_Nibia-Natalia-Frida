@@ -1,0 +1,12 @@
+---
+title: "Milestone2"
+format: html
+author: "Frida, Natalia, and Nibia"
+editor: visual
+---
+
+
+```{r}
+
+```
+

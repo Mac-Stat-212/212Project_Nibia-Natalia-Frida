@@ -1,4 +1,6 @@
-.Rproj.user
+data/raw/
+*.DS_Store
 .Rhistory
-.RData
-.Ruserdata
+.Rproj.user
+*.Rproj
+.quarto/

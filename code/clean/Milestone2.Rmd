@@ -29,3 +29,12 @@ print(raster_data)
 plot(raster_data, main = "Tree Cover Gain 2000-2012")
 ```
 
+```{r}
+
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
+
+```
+
+

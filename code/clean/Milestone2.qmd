@@ -1,12 +1,22 @@
 ---
-title: "Milestone2"
+title: "Milestone 2"
 format: html
 author: "Frida, Natalia, and Nibia"
 editor: visual
 ---
 
+The broad questions we had for Milestone 1 were the following:
+\
+\
+1.  How has the tree coverage changed, from years 2000-2023, depending on the Brazilian administration?
+\
+2.  What is the relationship between tree coverage and the amount of policy instruments implemented per year in Brazil?
+Now, after working with the data, we decided to revise the first question: 
+\
+\
+**How has the tree coverage changed, from years 2000-2023, depending on the political leaning of the administration in power?**
+\
+\
+Using political leaning rather than individual administrations is beneficial because it allows for broader trends to emerge, rather than focusing on specific governments. This approach helps identify whether left-leaning or right-leaning administrations have had a systematic impact on tree coverage, making the analysis more generalizable and reducing the noise introduced by short-term policy changes or individual leadership styles.
 
-```{r}
-
-```
 

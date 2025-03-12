@@ -1,0 +1,123 @@
+---
+title: "Milestone 2- Nibia"
+format: html
+author: "Nibia Becerra Santillan"
+editor: visual
+---
+
+## Packages
+
+```{r packages}
+library(tidyverse)
+library(sf) # tools for working with spatial vector data (GIS functionality, mapping)
+library(ggplot2)
+library(geobr)
+```
+
+## Exploring R package geobr 
+
+```{r}
+datasets <- list_geobr()
+
+head(datasets)
+
+```
+## Plotting base states
+
+```{r}
+# read all states
+states <- read_state(
+  year = 2019, 
+  showProgress = FALSE
+  )
+
+#View(states)
+# Remove plot axis
+no_axis <- theme(axis.title=element_blank(),
+                 axis.text=element_blank(),
+                 axis.ticks=element_blank())
+
+# Plot all Brazilian states
+ggplot() +
+  geom_sf(data=states, fill="#2D3E50", color="#FEBF57", size=.15, show.legend = FALSE) +
+  labs(subtitle="States", size=8) +
+  theme_minimal() +
+  no_axis
+```
+
+## Plotting by municipality
+
+```{r}
+# download municipality geometries
+muni_sf <- geobr::read_municipality(year = 2010,
+                                    showProgress = FALSE)
+#> Using year/date 2010
+
+#View(muni_sf)
+
+# plot map
+ggplot() +
+  geom_sf(data = muni_sf, fill="#2D3E50", color="#FEBF57", size=.15, show.legend = FALSE) +
+  labs(subtitle="Municipalities", size=8) +
+  theme_minimal() +
+  no_axis
+```
+
+
+## Calling BR tree cover loss datasets
+
+```{r}
+
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+head(tree_cover_loss)
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
+head(tree_cover_loss_brazil)
+```
+## Combining Datasets
+
+```{r}
+
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(name_muni = subnational2)
+
+mapping_BR <- tree_cover_loss_brazil %>%
+  left_join(muni_sf, by = "name_muni")
+
+mapping_BR
+```
+
+# Adjusting Extend ha 2000 and 2010 to be proportional to the sizes of the municipalities
+
+```{r}
+
+# in the future... 
+
+# But for now the graph is wrong because the size of the municipalities is different, so it is more helpful to have proportions
+
+```
+
+
+#Plotting Extent of Tree coverage of at least over 30%
+
+```{r}
+ggplot() +
+  geom_sf(
+    data = mapping_BR, 
+    aes(fill = extent_2000_ha, geometry = geom), 
+    color = NA
+  ) +
+  labs(title = "Tree Cover Extent (2000) by Municipality") +
+  scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)", labels = scales::comma) +
+  theme_void()
+
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = extent_2010_ha, geometry = geom), color = NA) +
+  labs(title = "Tree Cover Extent (2010) by Municipality") +
+  scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)",
+    labels = scales::comma  
+  ) +
+  theme_void()
+```
+
+

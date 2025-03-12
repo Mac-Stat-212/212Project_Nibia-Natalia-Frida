@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -77,6 +111,352 @@ ul.task-list li input[type="checkbox"] {
 <strong>How has the tree coverage changed, from years 2000-2023, depending on the political leaning of the administration in power?</strong><br>
 <br>
 Using political leaning rather than individual administrations is beneficial because it allows for broader trends to emerge, rather than focusing on specific governments. This approach helps identify whether left-leaning or right-leaning administrations have had a systematic impact on tree coverage, making the analysis more generalizable and reducing the noise introduced by short-term policy changes or individual leadership styles.</p>
+<section id="code-work" class="level1">
+<h1>Code work</h1>
+<section id="packages" class="level2">
+<h2 class="anchored" data-anchor-id="packages">Packages</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf) </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(geobr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="exploring-r-package-geobr" class="level2">
+<h2 class="anchored" data-anchor-id="exploring-r-package-geobr">Exploring R package geobr</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>datasets <span class="ot">&lt;-</span> <span class="fu">list_geobr</span>()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(datasets)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                    function           geography
+1             `read_country`             Country
+2              `read_region`              Region
+3               `read_state`              States
+4         `read_meso_region`         Meso region
+5        `read_micro_region`        Micro region
+6 `read_intermediate_region` Intermediate region
+                                                                                                                               years
+1 1872, 1900, 1911, 1920, 1933, 1940, 1950, 1960, 1970, 1980, 1991, 2000, 2001, 2010, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020
+2                                                                   2000, 2001, 2010, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020
+3 1872, 1900, 1911, 1920, 1933, 1940, 1950, 1960, 1970, 1980, 1991, 2000, 2001, 2010, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020
+4                                                                   2000, 2001, 2010, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020
+5                                                                   2000, 2001, 2010, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020
+6                                                                                                                   2017, 2019, 2020
+  source
+1   IBGE
+2   IBGE
+3   IBGE
+4   IBGE
+5   IBGE
+6   IBGE</code></pre>
+</div>
+</div>
+</section>
+<section id="plotting-base-brazilian-states" class="level2">
+<h2 class="anchored" data-anchor-id="plotting-base-brazilian-states">Plotting base Brazilian states</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># read all states</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>states <span class="ot">&lt;-</span> <span class="fu">read_state</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> <span class="dv">2019</span>, </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">showProgress =</span> <span class="cn">FALSE</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using year/date 2019</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#View(states)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove plot axis</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>no_axis <span class="ot">&lt;-</span> <span class="fu">theme</span>(<span class="at">axis.title=</span><span class="fu">element_blank</span>(),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">axis.text=</span><span class="fu">element_blank</span>(),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">axis.ticks=</span><span class="fu">element_blank</span>())</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot all Brazilian states</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data=</span>states, <span class="at">fill=</span><span class="st">"#2D3E50"</span>, <span class="at">color=</span><span class="st">"#FEBF57"</span>, <span class="at">size=</span>.<span class="dv">15</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">subtitle=</span><span class="st">"States"</span>, <span class="at">size=</span><span class="dv">8</span>) <span class="sc">+</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  no_axis</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Milestone2_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="plotting-by-municipality" class="level2">
+<h2 class="anchored" data-anchor-id="plotting-by-municipality">Plotting by municipality</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># download municipality geometries</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>muni_sf <span class="ot">&lt;-</span> geobr<span class="sc">::</span><span class="fu">read_municipality</span>(<span class="at">year =</span> <span class="dv">2010</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using year/date 2010</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#View(muni_sf)</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># plot map</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> muni_sf, <span class="at">fill=</span><span class="st">"#2D3E50"</span>, <span class="at">color=</span><span class="st">"#FEBF57"</span>, <span class="at">size=</span>.<span class="dv">15</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">subtitle=</span><span class="st">"Municipalities"</span>, <span class="at">size=</span><span class="dv">8</span>) <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  no_axis</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Milestone2_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="calling-br-tree-cover-loss-datasets" class="level2">
+<h2 class="anchored" data-anchor-id="calling-br-tree-cover-loss-datasets">Calling BR tree cover loss datasets</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>tree_cover_loss <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../../data/raw/Brazil_TreeCoverLoss.csv"</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(tree_cover_loss)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  country subnational1 subnational2 threshold area_ha extent_2000_ha
+1  Brazil         Acre   Acrelândia         0  158571         158571
+2  Brazil         Acre   Acrelândia        10  158571         124431
+3  Brazil         Acre   Acrelândia        15  158571         123853
+4  Brazil         Acre   Acrelândia        20  158571         123228
+5  Brazil         Acre   Acrelândia        25  158571         122874
+6  Brazil         Acre   Acrelândia        30  158571         122285
+  extent_2010_ha gain_2000.2020_ha tc_loss_ha_2001 tc_loss_ha_2002
+1         158571               989            4843            3292
+2          96208               989            4790            3281
+3          94883               989            4786            3279
+4          94653               989            4780            3278
+5          92928               989            4773            3277
+6          92076               989            4768            3276
+  tc_loss_ha_2003 tc_loss_ha_2004 tc_loss_ha_2005 tc_loss_ha_2006
+1            2658            4686           13505            2533
+2            2648            4678           13406            2527
+3            2647            4677           13395            2527
+4            2646            4676           13385            2525
+5            2644            4676           13372            2525
+6            2643            4675           13356            2524
+  tc_loss_ha_2007 tc_loss_ha_2008 tc_loss_ha_2009 tc_loss_ha_2010
+1            1817            4168            2161            2872
+2            1817            4132            2155            2868
+3            1816            4129            2155            2867
+4            1816            4124            2153            2867
+5            1816            4122            2153            2867
+6            1816            4119            2152            2866
+  tc_loss_ha_2011 tc_loss_ha_2012 tc_loss_ha_2013 tc_loss_ha_2014
+1            1094            1114            1458            2165
+2            1086            1108            1402            2118
+3            1085            1107            1398            2116
+4            1083            1107            1395            2114
+5            1083            1107            1393            2112
+6            1082            1106            1390            2110
+  tc_loss_ha_2015 tc_loss_ha_2016 tc_loss_ha_2017 tc_loss_ha_2018
+1            2203            3489            2776            1785
+2            2058            3188            2681            1713
+3            2053            3170            2674            1710
+4            2047            3154            2666            1706
+5            2044            3145            2663            1704
+6            2036            3127            2654            1700
+  tc_loss_ha_2019 tc_loss_ha_2020 tc_loss_ha_2021 tc_loss_ha_2022
+1            2217            1697            3687            3259
+2            2158            1635            3367            2959
+3            2154            1631            3354            2950
+4            2150            1626            3337            2941
+5            2148            1624            3331            2936
+6            2142            1620            3316            2924
+  tc_loss_ha_2023
+1            2050
+2            1940
+3            1934
+4            1930
+5            1926
+6            1921</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>tree_cover_loss <span class="ot">&lt;-</span> tree_cover_loss <span class="sc">%&gt;%</span> <span class="fu">filter</span>(threshold <span class="sc">==</span> <span class="dv">30</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>tree_cover_loss_brazil <span class="ot">&lt;-</span> tree_cover_loss <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="sc">-</span>threshold)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(tree_cover_loss_brazil)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  country subnational1    subnational2 area_ha extent_2000_ha extent_2010_ha
+1  Brazil         Acre      Acrelândia  158571         122285          92076
+2  Brazil         Acre    Assis Brazil  289663         284190         281522
+3  Brazil         Acre       Brasiléia  437224         376074         355323
+4  Brazil         Acre          Bujari  346763         283041         269722
+5  Brazil         Acre        Capixaba  173770         126374         112820
+6  Brazil         Acre Cruzeiro do Sul  791898         776282         769456
+  gain_2000.2020_ha tc_loss_ha_2001 tc_loss_ha_2002 tc_loss_ha_2003
+1               989            4768            3276            2643
+2               469             678             715             301
+3              2372            4477            4410            2634
+4              5713            3597            3337            1824
+5              1548            2619            5719            1062
+6              3284            1998            1923            2158
+  tc_loss_ha_2004 tc_loss_ha_2005 tc_loss_ha_2006 tc_loss_ha_2007
+1            4675           13356            2524            1816
+2             966             716             144             438
+3            6129           12094            1413            1824
+4            4819           11538            2213            1988
+5            2046            3640            1732             616
+6            2513            5830            1219            2257
+  tc_loss_ha_2008 tc_loss_ha_2009 tc_loss_ha_2010 tc_loss_ha_2011
+1            4119            2152            2866            1082
+2             201             313             547             245
+3            1672            1870            2834            2757
+4            2998            1439            2679            2358
+5            1032             703            1324            2512
+6            2644            2183            1350             883
+  tc_loss_ha_2012 tc_loss_ha_2013 tc_loss_ha_2014 tc_loss_ha_2015
+1            1106            1390            2110            2036
+2             833             442             838             563
+3            5342            4970            6049            4374
+4            2069            1903            2489            2255
+5            1805            1656            1511            1458
+6            3476            2561            3404            1526
+  tc_loss_ha_2016 tc_loss_ha_2017 tc_loss_ha_2018 tc_loss_ha_2019
+1            3127            2654            1700            2142
+2             792             826             790            1076
+3            6991            9147            8758            8816
+4            3382            3710            3825            3123
+5            3670            2570            2578            2308
+6            4220            4702            3009            3310
+  tc_loss_ha_2020 tc_loss_ha_2021 tc_loss_ha_2022 tc_loss_ha_2023
+1            1620            3316            2924            1921
+2             666             682             601             443
+3            7362            8829            8452            3320
+4            4522            5150            6192            2891
+5            2889            3427            2907            1221
+6            3600            5655            5446            3691</code></pre>
+</div>
+</div>
+</section>
+<section id="combining-datasets" class="level2">
+<h2 class="anchored" data-anchor-id="combining-datasets">Combining Datasets</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>tree_cover_loss_brazil <span class="ot">&lt;-</span> tree_cover_loss_brazil <span class="sc">%&gt;%</span> </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">name_muni =</span> subnational2)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>mapping_BR <span class="ot">&lt;-</span> tree_cover_loss_brazil <span class="sc">%&gt;%</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(muni_sf, <span class="at">by =</span> <span class="st">"name_muni"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in left_join(., muni_sf, by = "name_muni"): Detected an unexpected many-to-many relationship between `x` and `y`.
+ℹ Row 16 of `x` matches multiple rows in `y`.
+ℹ Row 308 of `y` matches multiple rows in `x`.
+ℹ If a many-to-many relationship is expected, set `relationship =
+  "many-to-many"` to silence this warning.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(mapping_BR)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  country subnational1    subnational2 area_ha extent_2000_ha extent_2010_ha
+1  Brazil         Acre      Acrelândia  158571         122285          92076
+2  Brazil         Acre    Assis Brazil  289663         284190         281522
+3  Brazil         Acre       Brasiléia  437224         376074         355323
+4  Brazil         Acre          Bujari  346763         283041         269722
+5  Brazil         Acre        Capixaba  173770         126374         112820
+6  Brazil         Acre Cruzeiro do Sul  791898         776282         769456
+  gain_2000.2020_ha tc_loss_ha_2001 tc_loss_ha_2002 tc_loss_ha_2003
+1               989            4768            3276            2643
+2               469             678             715             301
+3              2372            4477            4410            2634
+4              5713            3597            3337            1824
+5              1548            2619            5719            1062
+6              3284            1998            1923            2158
+  tc_loss_ha_2004 tc_loss_ha_2005 tc_loss_ha_2006 tc_loss_ha_2007
+1            4675           13356            2524            1816
+2             966             716             144             438
+3            6129           12094            1413            1824
+4            4819           11538            2213            1988
+5            2046            3640            1732             616
+6            2513            5830            1219            2257
+  tc_loss_ha_2008 tc_loss_ha_2009 tc_loss_ha_2010 tc_loss_ha_2011
+1            4119            2152            2866            1082
+2             201             313             547             245
+3            1672            1870            2834            2757
+4            2998            1439            2679            2358
+5            1032             703            1324            2512
+6            2644            2183            1350             883
+  tc_loss_ha_2012 tc_loss_ha_2013 tc_loss_ha_2014 tc_loss_ha_2015
+1            1106            1390            2110            2036
+2             833             442             838             563
+3            5342            4970            6049            4374
+4            2069            1903            2489            2255
+5            1805            1656            1511            1458
+6            3476            2561            3404            1526
+  tc_loss_ha_2016 tc_loss_ha_2017 tc_loss_ha_2018 tc_loss_ha_2019
+1            3127            2654            1700            2142
+2             792             826             790            1076
+3            6991            9147            8758            8816
+4            3382            3710            3825            3123
+5            3670            2570            2578            2308
+6            4220            4702            3009            3310
+  tc_loss_ha_2020 tc_loss_ha_2021 tc_loss_ha_2022 tc_loss_ha_2023
+1            1620            3316            2924            1921
+2             666             682             601             443
+3            7362            8829            8452            3320
+4            4522            5150            6192            2891
+5            2889            3427            2907            1221
+6            3600            5655            5446            3691
+        name_muni code_muni code_state abbrev_state
+1      Acrelândia   1200013         12           AC
+2    Assis Brazil        NA       &lt;NA&gt;         &lt;NA&gt;
+3       Brasiléia   1200104         12           AC
+4          Bujari   1200138         12           AC
+5        Capixaba   1200179         12           AC
+6 Cruzeiro do Sul        NA       &lt;NA&gt;         &lt;NA&gt;
+                            geom
+1 MULTIPOLYGON (((-67.14117 -...
+2             MULTIPOLYGON EMPTY
+3 MULTIPOLYGON (((-69.58835 -...
+4 MULTIPOLYGON (((-68.31643 -...
+5 MULTIPOLYGON (((-67.84667 -...
+6             MULTIPOLYGON EMPTY</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="adjusting-extend-ha-2000-and-2010-to-be-proportional-to-the-sizes-of-the-municipalities" class="level1">
+<h1>Adjusting Extend ha 2000 and 2010 to be proportional to the sizes of the municipalities</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># in the future... </span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># But for now the graph is wrong because the size of the municipalities is different, so it is more helpful to have proportions</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="plotting-extent-of-tree-coverage-of-at-least-over-30" class="level1">
+<h1>Plotting Extent of Tree coverage of at least over 30%</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> mapping_BR, </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">fill =</span> extent_2000_ha, <span class="at">geometry =</span> geom), </span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="cn">NA</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Tree Cover Extent (2000) by Municipality"</span>) <span class="sc">+</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_distiller</span>(<span class="at">palette =</span> <span class="st">"Greens"</span>, <span class="at">direction =</span> <span class="dv">1</span>, <span class="at">name =</span> <span class="st">"Tree Cover (ha)"</span>, <span class="at">labels =</span> scales<span class="sc">::</span>comma) <span class="sc">+</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Milestone2_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> mapping_BR, <span class="fu">aes</span>(<span class="at">fill =</span> extent_2010_ha, <span class="at">geometry =</span> geom), <span class="at">color =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Tree Cover Extent (2010) by Municipality"</span>) <span class="sc">+</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_distiller</span>(<span class="at">palette =</span> <span class="st">"Greens"</span>, <span class="at">direction =</span> <span class="dv">1</span>, <span class="at">name =</span> <span class="st">"Tree Cover (ha)"</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> scales<span class="sc">::</span>comma  </span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Milestone2_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
 
 </main>
 <!-- /main column -->

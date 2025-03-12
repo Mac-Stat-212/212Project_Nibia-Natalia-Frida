@@ -5,18 +5,129 @@ author: "Frida, Natalia, and Nibia"
 editor: visual
 ---
 
-The broad questions we had for Milestone 1 were the following:
+The broad questions we had for Milestone 1 were the following:\
 \
+1. How has the tree coverage changed, from years 2000-2023, depending on the Brazilian administration?\
+2. What is the relationship between tree coverage and the amount of policy instruments implemented per year in Brazil? Now, after working with the data, we decided to revise the first question:\
 \
-1.  How has the tree coverage changed, from years 2000-2023, depending on the Brazilian administration?
-\
-2.  What is the relationship between tree coverage and the amount of policy instruments implemented per year in Brazil?
-Now, after working with the data, we decided to revise the first question: 
-\
-\
-**How has the tree coverage changed, from years 2000-2023, depending on the political leaning of the administration in power?**
-\
+**How has the tree coverage changed, from years 2000-2023, depending on the political leaning of the administration in power?**\
 \
 Using political leaning rather than individual administrations is beneficial because it allows for broader trends to emerge, rather than focusing on specific governments. This approach helps identify whether left-leaning or right-leaning administrations have had a systematic impact on tree coverage, making the analysis more generalizable and reducing the noise introduced by short-term policy changes or individual leadership styles.
+
+# Code work
+
+## Packages
+
+```{r packages, message=FALSE}
+library(tidyverse)
+library(sf) 
+library(ggplot2)
+library(geobr)
+```
+
+## Exploring R package geobr 
+
+```{r}
+datasets <- list_geobr()
+
+head(datasets)
+
+```
+## Plotting base Brazilian states
+
+```{r cache=TRUE}
+# read all states
+states <- read_state(
+  year = 2019, 
+  showProgress = FALSE
+  )
+
+#View(states)
+# Remove plot axis
+no_axis <- theme(axis.title=element_blank(),
+                 axis.text=element_blank(),
+                 axis.ticks=element_blank())
+
+# Plot all Brazilian states
+ggplot() +
+  geom_sf(data=states, fill="#2D3E50", color="#FEBF57", size=.15, show.legend = FALSE) +
+  labs(subtitle="States", size=8) +
+  theme_minimal() +
+  no_axis
+```
+
+## Plotting by municipality
+
+```{r cache = TRUE}
+# download municipality geometries
+muni_sf <- geobr::read_municipality(year = 2010,
+                                    showProgress = FALSE)
+
+#View(muni_sf)
+
+# plot map
+ggplot() +
+  geom_sf(data = muni_sf, fill="#2D3E50", color="#FEBF57", size=.15, show.legend = FALSE) +
+  labs(subtitle="Municipalities", size=8) +
+  theme_minimal() +
+  no_axis
+```
+
+
+## Calling BR tree cover loss datasets
+
+```{r}
+
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+head(tree_cover_loss)
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
+head(tree_cover_loss_brazil)
+```
+## Combining Datasets
+
+```{r}
+
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(name_muni = subnational2)
+
+mapping_BR <- tree_cover_loss_brazil %>%
+  left_join(muni_sf, by = "name_muni")
+
+head(mapping_BR)
+```
+
+# Adjusting Extend ha 2000 and 2010 to be proportional to the sizes of the municipalities
+
+```{r}
+
+# in the future... 
+
+# But for now the graph is wrong because the size of the municipalities is different, so it is more helpful to have proportions
+
+```
+
+
+# Plotting Extent of Tree coverage of at least over 30%
+
+```{r}
+ggplot() +
+  geom_sf(
+    data = mapping_BR, 
+    aes(fill = extent_2000_ha, geometry = geom), 
+    color = NA
+  ) +
+  labs(title = "Tree Cover Extent (2000) by Municipality") +
+  scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)", labels = scales::comma) +
+  theme_void()
+
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = extent_2010_ha, geometry = geom), color = NA) +
+  labs(title = "Tree Cover Extent (2010) by Municipality") +
+  scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)",
+    labels = scales::comma  
+  ) +
+  theme_void()
+```
 
 

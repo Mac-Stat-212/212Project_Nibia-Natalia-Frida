@@ -13,6 +13,20 @@ The broad questions we had for Milestone 1 were the following:\
 **How has the tree coverage changed, from years 2000-2023, depending on the political leaning of the administration in power?**\
 \
 Using political leaning rather than individual administrations is beneficial because it allows for broader trends to emerge, rather than focusing on specific governments. This approach helps identify whether left-leaning or right-leaning administrations have had a systematic impact on tree coverage, making the analysis more generalizable and reducing the noise introduced by short-term policy changes or individual leadership styles.
+\
+\
+\
+We would like to obtain additional information about the 6 Brazilian administrations that were in power during the time period studied, 2000-2023, in order to increase our understanding of the data. This information would be obtained from news articles, as well as journal articles. We are particularly interested in looking at the outliers in tree cover loss at the city and state levels, and finding the reason for these outliers. 
+\
+Finally, we would like to create our own data set, which holds information on Brazilian presidents, including the years they were in power and their political leaning. We believe this data will be crucial for exploring our first question.
+\
+\
+The next steps in our project are the following:
+
+- Get the proportions of tree coverage in each municipality, in the year 2000, for easier and fair comparison between areas 
+- Join the information on the Brazilian administrations and their political leanings 
+- Continue exploring the data by creating visualizations and figures, including proportional bar charts, maps, line plots, and others.
+
 
 # Code work
 

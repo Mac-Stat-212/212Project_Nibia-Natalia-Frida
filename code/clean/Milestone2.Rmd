@@ -1,0 +1,31 @@
+---
+title: "Untitled"
+author: "Frida Morado"
+date: "2025-03-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(raster)
+
+raster_data <- raster('/Users/fridamorado/Desktop/Desktop - MacBook Air de Frida (2)/STAT212/212Project_Nibia-Natalia-Frida/data/raw/Hansen_GFC-2022-v1.10_gain_00N_070W.tif')
+
+print(raster_data)
+
+plot(raster_data)
+```
+
+```{r}
+library(terra)
+
+raster_data <- rast('/Users/fridamorado/Desktop/Desktop - MacBook Air de Frida (2)/STAT212/212Project_Nibia-Natalia-Frida/data/raw/Hansen_GFC-2022-v1.10_gain_00N_070W.tif')
+
+print(raster_data)
+
+plot(raster_data, main = "Tree Cover Gain 2000-2012")
+```
+

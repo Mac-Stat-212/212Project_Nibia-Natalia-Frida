@@ -24,7 +24,7 @@ head(datasets)
 ```
 ## Plotting base states
 
-```{r}
+```{r cache=TRUE}
 # read all states
 states <- read_state(
   year = 2019, 
@@ -47,7 +47,7 @@ ggplot() +
 
 ## Plotting by municipality
 
-```{r}
+```{r cache = TRUE}
 # download municipality geometries
 muni_sf <- geobr::read_municipality(year = 2010,
                                     showProgress = FALSE)

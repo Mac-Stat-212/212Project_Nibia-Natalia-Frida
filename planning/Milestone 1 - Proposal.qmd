@@ -35,7 +35,7 @@ head(BR_TreeCoverLoss)
 
 ### Global Forest Watch
 
-###### **Who?** 
+###### **Who?**
 
 Global Forest Watch is an online platform that provides data and tools for monitoring forests. GFW allows anyone to access near real-time information about where and how forests are changing around the world. Thousands of people around the world, from researchers to environmental organizations, use GFW every day to monitor and manage forests, call out unsustainable activities, and conduct research at the forefront of conservation.\
 \
@@ -79,4 +79,3 @@ The tree cover data was produced by the University of Maryland's GLAD laboratory
 ```{r}
 sessionInfo()
 ```
-

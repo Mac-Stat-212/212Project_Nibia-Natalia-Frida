@@ -91,9 +91,12 @@ mapping_BR
 
 ```{r}
 
-# in the future... 
-
-# But for now the graph is wrong because the size of the municipalities is different, so it is more helpful to have proportions
+mapping_BR
+mapping_BR <- mapping_BR %>% 
+  mutate(
+    relative_extent_per_size2000 =  (extent_2000_ha/area_ha)*100,
+    relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100
+  )
 
 ```
 
@@ -102,18 +105,14 @@ mapping_BR
 
 ```{r}
 ggplot() +
-  geom_sf(
-    data = mapping_BR, 
-    aes(fill = extent_2000_ha, geometry = geom), 
-    color = NA
-  ) +
-  labs(title = "Tree Cover Extent (2000) by Municipality") +
+  geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2000, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent (2000) by Municipality") +
   scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)", labels = scales::comma) +
   theme_void()
 
 ggplot() +
-  geom_sf(data = mapping_BR, aes(fill = extent_2010_ha, geometry = geom), color = NA) +
-  labs(title = "Tree Cover Extent (2010) by Municipality") +
+  geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2010, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent (2010) by Municipality") +
   scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)",
     labels = scales::comma  
   ) +

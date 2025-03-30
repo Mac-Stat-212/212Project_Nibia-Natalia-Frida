@@ -4,23 +4,82 @@ format: html
 editor: visual
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
 ```{r}
-1 + 1
+# Packages
+library(tidyverse)
+library(sf) 
+library(ggplot2)
+library(geobr)
 ```
 
-You can add options to executable code like this
-
 ```{r}
-#| echo: false
-2 * 2
+# Data & filtering 
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(name_muni = subnational2) 
+
+view(tree_cover_loss_brazil)
+colnames(tree_cover_loss_brazil)
+```
+```{r}
+# Data from wide to long format
+
+tree_cover_loss_long <- tree_cover_loss_brazil %>%
+  pivot_longer(
+    cols = starts_with("tc_loss_ha_"),
+     names_to = "year",
+    names_prefix = "tc_loss_ha_",
+    values_to = "loss_ha",
+  )
+view(tree_cover_loss_long)
+
+
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+# Graph
+tree_loss_long <- tree_cover_loss_long %>%
+  mutate(year = as.integer(year))
+
+tree_loss_summary <- tree_loss_long %>%
+  group_by(year) %>%
+  summarise(total_loss = sum(loss_ha, na.rm = TRUE))
+print(tree_loss_summary)
+
+
+ggplot(tree_loss_summary, aes(x = year, y = total_loss)) +
+  geom_line(color = "darkgreen") +
+  labs(title = "Annual tree cover loss (2001–2023)", x = "Year", y = "Tree cover loss (ha)") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+
+```
+```{r}
+# Shapefile
+muni_sf <- geobr::read_municipality(year = 2010,
+                                    showProgress = FALSE)
+
+mapping_BR <- tree_cover_loss_brazil %>%
+  left_join(muni_sf, by = "name_muni")
+
+mapping_BR <- mapping_BR %>% 
+  mutate(
+    relative_extent_per_size2000 =  (extent_2000_ha/area_ha)*100,
+    relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100
+  )
+```
+```{r}
+mapping_BR <- mapping_BR %>%
+  mutate(total_loss_ha = rowSums(across(starts_with("tc_loss_ha_")), na.rm = TRUE))
+
+
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = total_loss_ha, geometry = geom), color = NA) +
+  scale_fill_distiller(palette = "Oranges", direction = 1, name = "Total Loss (ha)", labels = scales::comma) +
+  labs(title = "Tree Cover Loss (2001–2023) by Municipality") +
+  theme_void()
+```
+

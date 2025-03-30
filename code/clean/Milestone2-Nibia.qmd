@@ -71,9 +71,24 @@ ggplot() +
 tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
 head(tree_cover_loss)
 tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+
+tree_cover_loss
 tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
 head(tree_cover_loss_brazil)
 ```
+
+```{r}
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(
+    loss_2000.2020_ha = tc_loss_ha_2001+tc_loss_ha_2002+tc_loss_ha_2003+tc_loss_ha_2004+tc_loss_ha_2005+tc_loss_ha_2006+tc_loss_ha_2007+tc_loss_ha_2008+tc_loss_ha_2009+tc_loss_ha_2010+tc_loss_ha_2011+tc_loss_ha_2012+tc_loss_ha_2013+tc_loss_ha_2014+tc_loss_ha_2015+tc_loss_ha_2016+tc_loss_ha_2017+tc_loss_ha_2018+tc_loss_ha_2019+tc_loss_ha_2020
+  ) %>% 
+  mutate(
+    extent_2020_ha = extent_2000_ha + (gain_2000.2020_ha- loss_2000.2020_ha) ## If the forest was 10 in 2000, and then it gained 3 and then lost 5. It would be 10 + (3-5) = 10-2 = 8
+  )
+
+tree_cover_loss_brazil
+```
+
 ## Combining Datasets
 
 ```{r}
@@ -95,28 +110,148 @@ mapping_BR
 mapping_BR <- mapping_BR %>% 
   mutate(
     relative_extent_per_size2000 =  (extent_2000_ha/area_ha)*100,
-    relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100
+    relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100,
+    relative_extent_per_size2020 =  (extent_2020_ha/area_ha)*100
   )
 
+mapping_BR <- mapping_BR %>% 
+  mutate(relative_change_2000_2010 = relative_extent_per_size2010 - relative_extent_per_size2000, #If it was 10 in 2000, and 12 in 2010, then it would be 12-10 = 2 (positive number), which means that now there is more tree cover loss
+         color = if_else(relative_change_2000_2010 > 0, "green4", "brown4")) %>% 
+  mutate(relative_change_2010_2020 = relative_extent_per_size2020 - relative_extent_per_size2010, 
+         color = if_else(relative_change_2010_2020 > 0, "green4", "brown4")) %>% 
+  mutate(relative_change_2000_2020 = relative_extent_per_size2020 - relative_extent_per_size2000, 
+         color = if_else(relative_change_2000_2020 > 0, "green4", "brown4"))
+
+
+#We found that   Fernando de Noronha in "Rio Grande do Norte" has NAs
+# mapping_BR_checkNAs_00 <- mapping_BR %>% 
+#   filter(extent_2000_ha == is.na(extent_2000_ha))%>%
+#   pull(subnational1, subnational2) 
+# mapping_BR_checkNAs_00
+# 
+# mapping_BR_checkNAs <- mapping_BR %>% 
+#   filter(extent_2010_ha == is.na(extent_2010_ha))%>% 
+#   pull(subnational1, subnational2) 
+# mapping_BR_checkNAs
+
+# mapping_BR_checkNAs_00 <- mapping_BR %>% 
+#   filter(subnational1 == "Pará")
+# mapping_BR_checkNAs_00
+# 
+# mapping_BR_checkNAs <- mapping_BR %>% 
+#   filter(extent_2010_ha == is.na(extent_2010_ha))%>% 
+#   pull(subnational1, subnational2) 
+# mapping_BR_checkNAs
+
+mapping_BR_checkNAs_00 <- mapping_BR %>% 
+  filter(geom == geom[1])
+mapping_BR_checkNAs_00
+
+mapping_BR_checkNAs <- mapping_BR %>% 
+  filter(extent_2010_ha == is.na(extent_2010_ha))%>% 
+  pull(subnational1, subnational2) 
+mapping_BR_checkNAs
 ```
 
 
 #Plotting Extent of Tree coverage of at least over 30%
 
 ```{r}
-ggplot() +
+tree_extent_2000 <- ggplot() +
   geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2000, geometry = geom), color = NA) +
   labs(title = "BRAZIL Tree Cover Extent (2000) by Municipality") +
-  scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)", labels = scales::comma) +
+  scale_fill_gradientn(colors = c("brown4","green4"), name = "Tree Cover (ha)", na.value = "grey") +
   theme_void()
+tree_extent_2000 
 
-ggplot() +
+tree_extent_2010 <- ggplot() +
   geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2010, geometry = geom), color = NA) +
   labs(title = "BRAZIL Tree Cover Extent (2010) by Municipality") +
-  scale_fill_distiller(palette = "Greens", direction = 1, name = "Tree Cover (ha)",
-    labels = scales::comma  
-  ) +
+  scale_fill_gradientn(colors = c("brown4","green4"), name = "Tree Cover (ha)", na.value = "grey") +
   theme_void()
+tree_extent_2010 
+
+tree_extent_2020 <- ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2020, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent (2020) by Municipality") +
+  scale_fill_gradientn(colors = c("brown4","green4"), name = "Tree Cover (ha)", na.value = "grey") +
+  theme_void()
+tree_extent_2020 
+
+tree_extent_2010 <- ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2010, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent (2010) by Municipality") +
+  scale_fill_gradientn(colors = c("brown4","green4"), name = "Tree Cover (ha)", na.value = "grey") +
+  theme_void()
+tree_extent_2010
+
+
+# Find the common range for the color scale (Done by CHATGPT)
+min_val <- min(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_2000_2020, na.rm = TRUE)
+max_val <- max(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_2000_2020, na.rm = TRUE)
+
+tree_extent_change_2000_2010 <- ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_change_2000_2010, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent Change from 2000-2010 by Municipality") +
+  scale_fill_gradientn(colors = c("brown4", "green4"), name = "Gain or loss (%)", na.value = "grey", limits = c(min_val, max_val)) +
+  theme_void()
+
+tree_extent_change_2000_2010
+
+tree_extent_change_2000_2020 <- ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_change_2000_2020, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent Change from 2000-2020 by Municipality") +
+  scale_fill_gradientn(colors = c("brown4", "green4"), name = "Gain or loss (%)", na.value = "grey", limits = c(min_val, max_val)) +
+  theme_void()
+
+tree_extent_change_2000_2020
+
+
+ggsave(
+  filename = "tree_extent_2000.png",
+  plot = tree_extent_2000,
+  path = "~/Desktop/2024-2025/Spring 2025/STAT 212/Project_name/stat212-final-project/",
+  width = 8,    # adjust width as needed
+  height = 7,   # adjust height as needed
+  dpi = 300     # adjust dpi for resolution
+)
+
+ggsave(
+  filename = "tree_extent_2010.png",
+  plot = tree_extent_2010,
+  path = "~/Desktop/2024-2025/Spring 2025/STAT 212/Project_name/stat212-final-project/",
+  width = 8,    # adjust width as needed
+  height = 7,   # adjust height as needed
+  dpi = 300     # adjust dpi for resolution
+)
+
+ggsave(
+  filename = "tree_extent_2020.png",
+  plot = tree_extent_2020,
+  path = "~/Desktop/2024-2025/Spring 2025/STAT 212/Project_name/stat212-final-project/",
+  width = 8,    # adjust width as needed
+  height = 7,   # adjust height as needed
+  dpi = 300     # adjust dpi for resolution
+)
+
+
+ggsave(
+  filename = "tree_extent_change_2000_2010.png",
+  plot = tree_extent_change_2000_2010,
+  path = "~/Desktop/2024-2025/Spring 2025/STAT 212/Project_name/stat212-final-project/",
+  width = 8,    # adjust width as needed
+  height = 7,   # adjust height as needed
+  dpi = 300     # adjust dpi for resolution
+)
+ggsave(
+  filename = "tree_extent_change_2000_2020.png",
+  plot = tree_extent_change_2000_2020,
+  path = "~/Desktop/2024-2025/Spring 2025/STAT 212/Project_name/stat212-final-project/",
+  width = 8,    # adjust width as needed
+  height = 7,   # adjust height as needed
+  dpi = 300     # adjust dpi for resolution
+)
+## Multipoligon empty
 ```
 
 

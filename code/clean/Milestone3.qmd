@@ -1,7 +1,14 @@
 ---
 title: "Milestone 3"
-format: html
 author: "Natalia, Nibia and Frida"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+  error: true
 editor: visual
 ---
 

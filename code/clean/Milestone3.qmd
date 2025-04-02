@@ -1,0 +1,139 @@
+---
+title: "Milestone 3"
+format: html
+author: "Natalia, Nibia and Frida"
+editor: visual
+---
+
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+
+The Amazon is one of the most important biomes on the planet. It covers more than 8 million square kilometres and is home to some 30% of the world’s biodiversity. Brazil has the largest portion of the Amazon, with 60% of the Amazon forest lying within the country’s borders.   \
+
+Tropical forests like the Amazon are critical regulators of Earth’s climate, storing one-quarter of all terrestrial carbon (Pan et al., 2011; Griscom, B cited by Kreir, F 2022)). Forests cycle large quantities of greenhouse gases through vegetation and soils from and into the atmosphere, stabilizing the atmospheric concentration of these gasses (Jackson et al., 2017). This is specially relevant in the climate change conversation since current models on future temperature and changes rely heavily on the capacity that forests have to store carbon (carbon sink). 
+Since one third of tropical forests have been lost to deforestation in the past few centuries (Kreier, F. (2022), the speed at which forests are losing their capacity to store carbon is concerning. \
+
+Given the Amazon’s importance as a carbon sink, it is essential to understand the political and policy drivers behind deforestation. Protecting the Amazon requires the government to implement clear action against deforestation at multiple levels, from national to municipal. Therefore, our project focuses on two questions. First, how has tree coverage in Brazil changed from 2000 to 2023, depending on the political leaning of the administration in power? Secondly, what is the relationship between tree coverage and the amount of policy instruments implemented per year in Brazil? Through these questions, we aim to focus our analysis on identifying broader political  trends that may explain deforestation patterns. Additionally, by integrating policy instrument data, we aim to understand whether a higher amount of policy instruments correlates with higher or lower deforestation outcomes over time. \
+\
+
+
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(sf) 
+library(ggplot2)
+library(geobr)
+
+muni_sf <- geobr::read_municipality(year = 2010, showProgress = FALSE)
+
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
+
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(
+    loss_2000.2020_ha = tc_loss_ha_2001+tc_loss_ha_2002+tc_loss_ha_2003+tc_loss_ha_2004+tc_loss_ha_2005+tc_loss_ha_2006+tc_loss_ha_2007+tc_loss_ha_2008+tc_loss_ha_2009+tc_loss_ha_2010+tc_loss_ha_2011+tc_loss_ha_2012+tc_loss_ha_2013+tc_loss_ha_2014+tc_loss_ha_2015+tc_loss_ha_2016+tc_loss_ha_2017+tc_loss_ha_2018+tc_loss_ha_2019+tc_loss_ha_2020
+  ) %>% 
+  mutate(
+    extent_2020_ha = extent_2000_ha + (gain_2000.2020_ha- loss_2000.2020_ha)
+  )
+
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(name_muni = subnational2)
+
+mapping_BR <- tree_cover_loss_brazil %>%
+  left_join(muni_sf, by = "name_muni")
+
+mapping_BR <- mapping_BR %>% 
+  mutate(
+    relative_extent_per_size2000 =  (extent_2000_ha/area_ha)*100,
+    relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100,
+    relative_extent_per_size2020 =  (extent_2020_ha/area_ha)*100
+  ) %>%
+  mutate(
+    relative_change_2000_2010 = relative_extent_per_size2010 - relative_extent_per_size2000,
+    color = if_else(relative_change_2000_2010 > 0, "green4", "brown4")
+  ) %>%
+  mutate(
+    relative_change_2010_2020 = relative_extent_per_size2020 - relative_extent_per_size2010,
+    color = if_else(relative_change_2010_2020 > 0, "green4", "brown4")
+  ) %>%
+  mutate(
+    relative_change_2000_2020 = relative_extent_per_size2020 - relative_extent_per_size2000,
+    color = if_else(relative_change_2000_2020 > 0, "green4", "brown4")
+  )
+
+min_val <- min(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_2000_2020, na.rm = TRUE)
+max_val <- max(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_2000_2020, na.rm = TRUE)
+```
+
+```{r, echo=FALSE}
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2000, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent (2000) by Municipality") +
+  scale_fill_gradientn(colors = c("brown4","green4"), name = "Tree Cover (ha)", na.value = "grey") +
+  theme_void()
+```
+
+```{r, echo=FALSE}
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2010, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent (2010) by Municipality") +
+  scale_fill_gradientn(colors = c("brown4","green4"), name = "Tree Cover (ha)", na.value = "grey") +
+  theme_void()
+```
+
+```{r, echo=FALSE}
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_extent_per_size2020, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent (2020) by Municipality") +
+  scale_fill_gradientn(colors = c("brown4","green4"), name = "Tree Cover (ha)", na.value = "grey") +
+  theme_void()
+```
+
+Graphs for reference on population density and biomes:
+
+![](Biome1.png){width=600px}
+
+![](Biome2.jpg){width=600px}
+
+Throughout all years, we observe tree cover (ha) is highest in the Brazilian districts that are part of the Amazon Basin and the Atlantic coast, which are equatorial forest and tropical forest biomes. Then in the middle section we also see the lowest tree cover consistently in the states that belong to the savanna biome in Brazil. From the tree graphs, the differences appear subtle, but it is noticeable that the most impacted areas are those states where transitional biomes exist. We hypothesize that these areas are the buffer zones for protected areas and are vulnerable for deforestation. We developed relative change maps that capture the net change on tree coverage per district to investigate this further. \
+
+
+```{r, echo=FALSE}
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_change_2000_2010, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent Change from 2000-2010 by Municipality") +
+  scale_fill_gradientn(colors = c("brown4", "green4"), name = "Gain or loss (%)", na.value = "grey", limits = c(min_val, max_val)) +
+  theme_void()
+```
+
+
+```{r, echo=FALSE}
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_change_2000_2020, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent Change from 2000-2020 by Municipality") +
+  scale_fill_gradientn(colors = c("brown4", "green4"), name = "Gain or loss (%)", na.value = "grey", limits = c(min_val, max_val)) +
+  theme_void()
+```
+
+```
+
+
+We explored several ways to visualize changes in tree coverage from 2000 to 2020. Initially, the first three maps did not clearly show the differences when viewed individually, although the changes became more noticeable when played sequentially in R. To enhance visibility, we adjusted the color palette, which made the differences more apparent in the final two maps. We also found it more effective to compare 2000 directly to 2020 rather than including 2010, as it better highlighted the overall shift. To improve our maps, we will focus on showcasing which areas did not have as much tree coverage to begin with, as to have our relative change be more effective at conveying the loss of trees, but also capturing which areas did not have a vast tree cover to begin with. Also, we will test additional palettes to emphasize changes more effectively. We are also missing political leanings and policy instruments in place as variables in our visualization, which are essential for exploring our main questions.
+ \ 
+
+An important limitation with regard to the data context is that it is difficult to isolate the impact of each political administration and establish causality. The impact of policies may not be seen immediately. Instead, environmental outcomes such as tree cover loss or gain may be visible after years. Despite the limitation, we believe that our study does provide meaningful information on deforestation patterns across Brazil. A future direction we plan to take is to establish the relationship between the political leanings of each president and the tree cover loss. \ 
+
+**References:**
+\
+\
+Jackson, R. B., Lajtha, K., Crow, S. E., Hugelius, G., Kramer, M. G., & Piñeiro, G. (2017). The Ecology of Soil Carbon: Pools, Vulnerabilities, and Biotic and Abiotic Controls. Annual Review of Ecology, Evolution, and Systematics, 48(1), 419-445. https://doi.org/10.1146/annurev-ecolsys-112414-054234 \ 
+
+Pan, Y., Birdsey, R. A., Fang, J., Houghton, R., Kauppi, P. E., Kurz, W. A., Phillips, O. L., Shvidenko, A., Lewis, S. L., Canadell, J. G., Ciais, P., Jackson, R. B., Pacala, S. W., McGuire, A. D., Piao, S., Rautiainen, A., Sitch, S., & Hayes, D. (2011). A Large and Persistent Carbon Sink in the World’s Forests. Science, 333(6045), 988-993. https://doi.org/10.1126/science.1201609 \ 
+
+Kreier, F. (2022). Tropical forests have big climate benefits beyond carbon storage. Nature, d41586-022-00934-00936. https://doi.org/10.1038/d41586-022-00934-6 \
+
+

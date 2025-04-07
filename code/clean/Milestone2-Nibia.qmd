@@ -201,11 +201,10 @@ tree_extent_change_2000_2010
 tree_extent_change_2000_2020 <- ggplot() +
   geom_sf(data = mapping_BR, aes(fill = relative_change_2000_2020, geometry = geom), color = NA) +
   labs(title = "BRAZIL Tree Cover Extent Change from 2000-2020 by Municipality") +
-  scale_fill_gradientn(colors = c("brown4", "green4"), name = "Gain or loss (%)", na.value = "grey", limits = c(min_val, max_val)) +
+  scale_fill_disc(colors = c("brown4", "green4"), name = "Gain or loss (%)", na.value = "grey", limits = c(min_val, max_val)) +
   theme_void()
 
 tree_extent_change_2000_2020
-
 
 ggsave(
   filename = "tree_extent_2000.png",
@@ -253,5 +252,23 @@ ggsave(
 )
 ## Multipoligon empty
 ```
+# Making the graph clearer
 
+```{r}
+
+tree_extent_change_2000_2020 %>% 
+  mutate(actualChange = case_when(
+    relative_change2000_2020 %in% c(0)
+  )
+  )
+
+tree_extent_change_2000_2020 <- ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = relative_change_2000_2020, geometry = geom), color = NA) +
+  labs(title = "BRAZIL Tree Cover Extent Change from 2000-2020 by Municipality") +
+  scale_fill_disc(colors = c("brown4", "green4"), name = "Gain or loss (%)", na.value = "grey", limits = c(min_val, max_val)) +
+  theme_void()
+
+tree_extent_change_2000_2020
+
+```
 

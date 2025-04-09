@@ -4,23 +4,170 @@ format: html
 editor: visual
 ---
 
-## Quarto
+### Libraries
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+```{r, message = FALSE}
+library(tidyverse)
+library(dplyr)
 
-## Running Code
+# Plots
+library(ggplot2)
+library(plotly)
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+library(sf) # geo-spatial plots
+library(geobr) # Geo-spatial info specifically for Brazil
 
-```{r}
-1 + 1
+library(zoo) # Rolling average
+library(scales) # labels in k
 ```
 
-You can add options to executable code like this
+## Data Import and Wrangling
 
-```{r}
-#| echo: false
-2 * 2
+```{r, message = FALSE, warning = FALSE}
+datasets <- list_geobr()
+
+# Municipalities geometries
+muni_sf <- geobr::read_municipality(year = 2010,
+                                    showProgress = FALSE)
+
+# Tree cover loss for all countries and all thresholds
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+
+# Tree cover loss only for Brazil and threshold = 30
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tcl_brazil <- tree_cover_loss %>% select(-threshold, -country)
+
+# Tree cover loss by municipality
+tcl_brazil <- tcl_brazil %>% 
+  mutate(name_muni = subnational2)
+
+mapping_BR <- tcl_brazil %>%
+  left_join(muni_sf, by = "name_muni")
+
+head(mapping_BR)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+# Join all tc_loss_ha in one column
+
+data_long <- mapping_BR %>% 
+  select(subnational1, subnational2, name_muni, code_muni, abbrev_state, area_ha, starts_with("tc_loss_ha_"), geom) %>%
+  pivot_longer(cols = starts_with("tc_loss_ha_"),
+               names_to = "year",
+               values_to = "loss_ha") %>%
+  mutate(year = as.numeric(gsub("tc_loss_ha_", "", year)),
+         loss_pct = (loss_ha / area_ha) * 100)
+
+# Summarize total loss per state per year
+state_loss <- data_long %>%
+  group_by(subnational1, year) %>%
+  summarise(total_loss = sum(loss_ha, na.rm = TRUE), .groups = "drop") %>%
+  group_by(subnational1) %>%
+  arrange(year) %>%
+  mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
+
+head(state_loss)
+```
+
+```{r}
+cum_perc <- data_long %>%
+  arrange(abbrev_state, name_muni, year) %>%  # Ensure it's ordered by state, municipality, and year
+  group_by(abbrev_state, name_muni) %>%
+  mutate(remaining_tree_pct = 100 - cumsum(loss_pct)) %>%
+  ungroup()
+
+# Check the first few rows
+head(cum_perc)
+
+```
+
+## Visuals
+First two were too similar to Nibia's, so we thought we needed a different approach, hence the line plot.
+
+```{r earth_colors}
+earth_colors <- c("#8b6c42", "#d5b07c", "#a2c579", "#2c7c36")
+```
+
+
+```{r eval=FALSE}
+# Base ggplot code for Tree ccoverage
+data_2001 <- cum_perc %>% 
+  filter(cum_perc$year == 2001)
+  
+tc_2001_1 <- ggplot() +
+  geom_sf(data = data_2001, aes(fill = remaining_tree_pct, geometry = geom), color = NA) +
+  labs(title = paste("BRAZIL Tree Cover Loss 2001 by Municipality", sep = "")) +
+  scale_fill_gradientn(colors = earth_colors, name = "Tree Cover (ha)", breaks = c(40, 50, 60, 70, 80, 90, 100), labels = scales::comma) +
+  theme_void()
+
+data_2023 <- cum_perc %>% 
+  filter(cum_perc$year == 2023)
+
+tc_2023_1 <- ggplot() +
+  geom_sf(data = data_2023, aes(fill = remaining_tree_pct, geometry = geom), color = NA) +
+  labs(title = paste("BRAZIL Tree Cover Loss 2023 by Municipality", sep = "")) +
+  scale_fill_gradientn(colors = earth_colors, name = "Tree Cover (ha)", breaks = c(40, 50, 60, 70, 80, 90, 100), labels = scales::comma) +
+  theme_void()
+
+tc_2001_1
+tc_2023_1
+```
+
+```{r}
+# Function with applied base code
+
+plot_tcl <- function(new_year){
+  data_new <- cum_perc %>% 
+    filter(cum_perc$year == new_year)
+  
+  ggplot() +
+    geom_sf(data = data_new, aes(fill = remaining_tree_pct, geometry = geom), color = NA) +
+    labs(title = paste("Brazil Percentage covered by trees by Municipality", sep = ""),
+         subtitle = new_year) +
+    scale_fill_gradientn(colors = earth_colors, name = "Tree Cover (% of ha)", breaks = c(40, 50, 60, 70, 80, 90, 100), labels = scales::comma) +
+    theme_void() 
+}
+
+tc_2001 <- plot_tcl(2001) 
+tc_2001 
+
+tc_2023 <- plot_tcl(2023)
+tc_2023
+
+# ggsave(filename = "Tree cover 2001.jpg", plot = tc_2001)
+# ggsave(filename = "Tree cover 2023.jpg", plot = tc_2023)
+```
+
+```{r warning = FALSE}
+example_states <- c("Amazonas", "Pará", "Mato Grosso", "Rondônia")
+
+# Plot annual tree cover loss
+annual_tc_loss <- function(state){
+  
+  ggplot(filter(state_loss, subnational1 %in% state), aes(x = year, y = total_loss)) +
+    geom_line(color = "gray70") +
+    geom_line(aes(y = roll_avg_3yr), color = "darkgreen", size = 1) +
+    geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "red", linewidth = 0.5) +
+    facet_wrap(~ subnational1, scales = "free_y") +
+    scale_y_continuous(
+      labels = label_number(scale = 1/1000, suffix = "k", accuracy = 1)
+    ) +
+    labs(
+      title = "Annual Tree Cover Loss in Select Brazilian States",
+      subtitle = "With 3-year rolling average and linear trend line (2001–2023)",
+      y = "Tree Cover Loss (thousands of ha)",
+      x = "Year"
+    ) +
+    theme_minimal()
+}
+
+multiple_states <- annual_tc_loss(example_states)
+one_state <- annual_tc_loss("Pará")
+
+multiple_states
+one_state
+
+#ggsave(filename = "plot_example.jpg", plot = one_state)
+
+```
+

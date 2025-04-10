@@ -67,6 +67,21 @@ state_loss <- data_long %>%
   mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
 
 head(state_loss)
+head(data_long)
+
+para <- data_long %>% 
+  filter(subnational1 == "Pará")
+
+para
+
+state_long <- data_long %>% 
+  group_by(subnational1, year) %>%
+  summarise(
+    weighted_loss_pct = weighted.mean(loss_pct, area_ha, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+head(state_long)
 ```
 
 ```{r}
@@ -138,6 +153,9 @@ tc_2023
 # ggsave(filename = "Tree cover 2023.jpg", plot = tc_2023)
 ```
 
+- Look at proportions: they end up being the exact same as the gray line.
+- Make notes of the lines
+
 ```{r warning = FALSE}
 example_states <- c("Amazonas", "Pará", "Mato Grosso", "Rondônia")
 
@@ -145,19 +163,19 @@ example_states <- c("Amazonas", "Pará", "Mato Grosso", "Rondônia")
 annual_tc_loss <- function(state){
   
   ggplot(filter(state_loss, subnational1 %in% state), aes(x = year, y = total_loss)) +
-    geom_line(color = "gray70") +
-    geom_line(aes(y = roll_avg_3yr), color = "darkgreen", size = 1) +
-    geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "red", linewidth = 0.5) +
+    geom_line(color = "Annual Loss") +
+    geom_line(aes(y = roll_avg_3yr, color = "3-Year Rolling Avg"), size = 1) +
+    geom_smooth(aes(color = "Linear Trend"), method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
     facet_wrap(~ subnational1, scales = "free_y") +
-    scale_y_continuous(
-      labels = label_number(scale = 1/1000, suffix = "k", accuracy = 1)
-    ) +
-    labs(
-      title = "Annual Tree Cover Loss in Select Brazilian States",
-      subtitle = "With 3-year rolling average and linear trend line (2001–2023)",
-      y = "Tree Cover Loss (thousands of ha)",
-      x = "Year"
-    ) +
+    scale_y_continuous(labels = label_number(scale = 1/1000, suffix = "k", accuracy = 1)) +
+    scale_color_manual(name = "Line Type",
+                      values = c("Annual Loss" = "gray70",
+                                 "3-Year Rolling Avg" = "darkgreen",
+                                 "Linear Trend" = "red"))+
+    labs(title = "Annual Tree Cover Loss in Select Brazilian States",
+        subtitle = "With 3-year rolling average and linear trend line (2001–2023)",
+        y = "Tree Cover Loss (thousands of ha)",
+        x = "Year") +
     theme_minimal()
 }
 
@@ -167,7 +185,9 @@ one_state <- annual_tc_loss("Pará")
 multiple_states
 one_state
 
-#ggsave(filename = "plot_example.jpg", plot = one_state)
+# ggsave(filename = "plot_example.jpg", plot = one_state)
+# ggsave(filename = "mult_plot_example.jpg", plot = multiple_states)
+
 
 ```
 

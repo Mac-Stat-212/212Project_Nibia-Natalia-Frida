@@ -1,0 +1,282 @@
+---
+title: "Milestone4_Frida"
+format: html
+editor: visual
+---
+
+```{r}
+# Packages
+library(tidyverse)
+library(sf) 
+library(ggplot2)
+library(geobr)
+```
+
+```{r}
+# Data & filtering 
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(name_muni = subnational2) 
+
+view(tree_cover_loss_brazil)
+colnames(tree_cover_loss_brazil)
+```
+```{r}
+# Data from wide to long format
+
+tree_cover_loss_long <- tree_cover_loss_brazil %>%
+  pivot_longer(
+    cols = starts_with("tc_loss_ha_"),
+     names_to = "year",
+    names_prefix = "tc_loss_ha_",
+    values_to = "loss_ha",
+  )
+view(tree_cover_loss_long)
+
+
+```
+
+```{r}
+# Graph
+tree_loss_long <- tree_cover_loss_long %>%
+  mutate(year = as.integer(year))
+
+tree_loss_summary <- tree_loss_long %>%
+  group_by(year) %>%
+  summarise(total_loss = sum(loss_ha, na.rm = TRUE))
+print(tree_loss_summary)
+
+
+ggplot(tree_loss_summary, aes(x = year, y = total_loss)) +
+  geom_line(color = "darkgreen") +
+  labs(title = "Annual tree cover loss (2001–2023)", x = "Year", y = "Tree cover loss (ha)") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+
+```
+```{r}
+# Shapefile
+muni_sf <- geobr::read_municipality(year = 2010,
+                                    showProgress = FALSE)
+
+mapping_BR <- tree_cover_loss_brazil %>%
+  left_join(muni_sf, by = "name_muni")
+
+mapping_BR <- mapping_BR %>% 
+  mutate(
+    relative_extent_per_size2000 =  (extent_2000_ha/area_ha)*100,
+    relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100
+  )
+```
+```{r}
+mapping_BR <- mapping_BR %>%
+  mutate(total_loss_ha = rowSums(across(starts_with("tc_loss_ha_")), na.rm = TRUE))
+
+
+ggplot() +
+  geom_sf(data = mapping_BR, aes(fill = total_loss_ha, geometry = geom), color = NA) +
+  scale_fill_distiller(palette = "Oranges", direction = 1, name = "Total Loss (ha)", labels = scales::comma) +
+  labs(title = "Tree Cover Loss (2001–2023) by Municipality") +
+  theme_void()
+```
+
+
+```{r}
+# Data
+
+library(tidyverse)
+library(sf) 
+library(ggplot2)
+library(geobr)
+
+muni_sf <- geobr::read_municipality(year = 2010, showProgress = FALSE)
+
+tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+tree_cover_loss <- tree_cover_loss %>% filter(threshold == 30)
+tree_cover_loss_brazil <- tree_cover_loss %>% select(-threshold)
+
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(
+    loss_2000.2020_ha = tc_loss_ha_2001+tc_loss_ha_2002+tc_loss_ha_2003+tc_loss_ha_2004+tc_loss_ha_2005+tc_loss_ha_2006+tc_loss_ha_2007+tc_loss_ha_2008+tc_loss_ha_2009+tc_loss_ha_2010+tc_loss_ha_2011+tc_loss_ha_2012+tc_loss_ha_2013+tc_loss_ha_2014+tc_loss_ha_2015+tc_loss_ha_2016+tc_loss_ha_2017+tc_loss_ha_2018+tc_loss_ha_2019+tc_loss_ha_2020
+  ) %>% 
+  mutate(
+    extent_2020_ha = extent_2000_ha + (gain_2000.2020_ha- loss_2000.2020_ha)
+  )
+
+tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+  mutate(name_muni = subnational2)
+
+mapping_BR <- tree_cover_loss_brazil %>%
+  left_join(muni_sf, by = "name_muni")
+
+mapping_BR <- mapping_BR %>% 
+  mutate(
+    relative_extent_per_size2000 =  (extent_2000_ha/area_ha)*100,
+    relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100,
+    relative_extent_per_size2020 =  (extent_2020_ha/area_ha)*100
+  ) %>%
+  mutate(
+    relative_change_2000_2010 = relative_extent_per_size2010 - relative_extent_per_size2000,
+    color = if_else(relative_change_2000_2010 > 0, "green4", "brown4")
+  ) %>%
+  mutate(
+    relative_change_2010_2020 = relative_extent_per_size2020 - relative_extent_per_size2010,
+    color = if_else(relative_change_2010_2020 > 0, "green4", "brown4")
+  ) %>%
+  mutate(
+    relative_change_2000_2020 = relative_extent_per_size2020 - relative_extent_per_size2000,
+    color = if_else(relative_change_2000_2020 > 0, "green4", "brown4")
+  )
+
+min_val <- min(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_2000_2020, na.rm = TRUE)
+max_val <- max(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_2000_2020, na.rm = TRUE)
+```
+
+
+```{r}
+indigenous <- geobr::read_indigenous_land()
+
+ggplot() +
+  geom_sf(data = mapping_BR, aes(geometry = geom, fill = relative_change_2000_2020), color = NA) +
+  geom_sf(data = indigenous, aes(geometry = geom), fill = NA, color = "black", size = 0.3) +
+  scale_fill_gradient2(
+    low = "brown4", mid = "khaki1", high = "green4", midpoint = 0,
+    name = "Tree cover change (%)"
+  ) +
+  labs(
+    title = "Tree cover change (2000–2020) and indigenous territories in Brazil",
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.caption = element_text(size = 8)
+  )
+```
+```{r}
+names(indigenous)
+
+all_muni <- read_municipality(
+  code_muni = "RJ", 
+  year= 2010,
+  showProgress = FALSE
+  )
+
+indigenous_RJ <- indigenous %>% 
+  filter(abbrev_state == "RJ")
+
+colnames(tree_cover_loss_brazil)
+
+mapping_RJ <- all_muni %>%
+  left_join(tree_cover_loss_brazil, by = "name_muni") %>%
+  mutate(
+    relative_change_2000_2020 = (extent_2020_ha - extent_2000_ha) / area_ha * 100
+  )
+
+summary(mapping_RJ$relative_change_2000_2020)
+
+
+ggplot() +
+  geom_sf(data = mapping_RJ, aes(fill = relative_change_2000_2020), color = NA) +
+  geom_sf(data = indigenous_RJ, fill = NA, color = "red", size = 0.4) +
+  scale_fill_gradient2(
+    low = "brown4", mid = "khaki1", high = "green4", midpoint = 0,
+    name = "Tree Cover Change (%)"
+  ) +
+  labs(
+    title = "Tree cover change (2000–2020) and indigenous territories in Rio",
+  ) +
+  theme_void()
+
+```
+
+# Para y Amazonas 
+
+```{r}
+all_muni <- read_municipality(
+  code_muni = "PA", 
+  year = 2010,
+  showProgress = FALSE
+)
+
+indigenous_PA <- indigenous %>% 
+  filter(abbrev_state == "PA")
+
+mapping_PA <- all_muni %>%
+  left_join(tree_cover_loss_brazil, by = "name_muni") %>%
+  mutate(
+    relative_change_2000_2020 = (extent_2020_ha - extent_2000_ha) / area_ha * 100
+  )
+
+ggplot() +
+  geom_sf(data = mapping_PA, aes(fill = relative_change_2000_2020), color = NA) +
+  geom_sf(data = indigenous_PA, fill = NA, color = "red", size = 0.4) +
+  scale_fill_gradient2(
+    low = "brown4", mid = "khaki1", high = "green4", midpoint = 0,
+    name = "Tree cover change (%)"
+  ) +
+  labs(
+    title = "Tree cover change (2000–2020) and indigenous terriories in Pará",
+  ) +
+  theme_void()
+```
+```{r}
+mapping_PA <- mapping_PA %>%
+  mutate(intersects_indigenous = lengths(st_intersects(geom, indigenous_PA)) > 0)
+
+mapping_PA %>%
+  group_by(intersects_indigenous) %>%
+  summarise(
+    avg_loss = mean(relative_change_2000_2020, na.rm = TRUE),
+    median_loss = median(relative_change_2000_2020, na.rm = TRUE)
+  )
+```
+
+```{r}
+all_muni_AM <- read_municipality(
+  code_muni = "AM",
+  year = 2010,
+  showProgress = FALSE
+)
+
+indigenous_AM <- indigenous %>% 
+  filter(abbrev_state == "AM")
+
+mapping_AM <- all_muni_AM %>%
+  left_join(tree_cover_loss_brazil, by = "name_muni") %>%
+  mutate(
+    relative_change_2000_2020 = (extent_2020_ha - extent_2000_ha) / area_ha * 100
+  )
+
+mapping_AM <- mapping_AM %>%
+  mutate(intersects_indigenous = lengths(st_intersects(geom, indigenous_AM)) > 0)
+
+ggplot() +
+  geom_sf(data = mapping_AM, aes(fill = relative_change_2000_2020), color = NA) +
+  geom_sf(data = indigenous_AM, fill = NA, color = "blue", size = 0.4) +
+  scale_fill_gradient2(
+    low = "brown4", mid = "khaki1", high = "green4", midpoint = 0,
+    name = "Tree Cover Change (%)"
+  ) +
+  labs(
+    title = "Tree cover change (2000–2020) and Indigenous Territories in Amazonas",
+    caption = "Data: Global Forest Watch, geobr"
+  ) +
+  theme_void()
+
+# Average loss comparison
+mapping_AM %>%
+  group_by(intersects_indigenous) %>%
+  summarise(
+    avg_loss = mean(relative_change_2000_2020, na.rm = TRUE),
+    median_loss = median(relative_change_2000_2020, na.rm = TRUE)
+  )
+
+# Simple statistical test:
+t.test(relative_change_2000_2020 ~ intersects_indigenous, data = mapping_AM)
+```
+
+
+

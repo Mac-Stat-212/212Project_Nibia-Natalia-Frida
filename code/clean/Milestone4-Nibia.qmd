@@ -158,3 +158,11 @@ When overlapping this map with the bounds on the protected areas and the Amazon 
 **What are the limitations of this visualization?**
 The are many regions missing from our dataset. We need to show the bounds of the protected areas and investigate further those municipalities that had tree cover extend gain.
 
+
+QUESTIONS:
+
+- Add a Less than 20% (was that a good decision?) I think maybe not
+- Maybe the white spots can be better, if I make a better effort at finding the multipoligons.
+
+
+

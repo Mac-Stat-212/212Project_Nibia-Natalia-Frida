@@ -97,12 +97,12 @@ head(cum_perc)
 ```
 
 ## Visuals
+
 First two were too similar to Nibia's, so we thought we needed a different approach, hence the line plot.
 
 ```{r earth_colors}
 earth_colors <- c("#8b6c42", "#d5b07c", "#a2c579", "#2c7c36")
 ```
-
 
 ```{r eval=FALSE}
 # Base ggplot code for Tree ccoverage
@@ -153,8 +153,8 @@ tc_2023
 # ggsave(filename = "Tree cover 2023.jpg", plot = tc_2023)
 ```
 
-- Look at proportions: they end up being the exact same as the gray line.
-- Make notes of the lines
+-   Look at proportions: they end up being the exact same as the gray line.
+-   Make notes of the lines
 
 ```{r warning = FALSE}
 example_states <- c("Amazonas", "Pará", "Mato Grosso", "Rondônia")
@@ -190,4 +190,3 @@ one_state
 
 
 ```
-

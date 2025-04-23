@@ -1,0 +1,417 @@
+---
+title: "Milestone5_Frida"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(sf)
+library(geobr)
+library(zoo)
+library(ggplot2)
+```
+
+```{r}
+tcl_raw <- read.csv("data/raw/Brazil_TreeCoverLoss.csv") %>%
+  filter(country == "Brazil", threshold == 30) %>%
+  rename(
+    name_muni = subnational2,
+    name_state = subnational1,
+    gain_ha = gain_2000.2020_ha
+  ) %>%
+  select(-country, -threshold)
+
+tcl <- tcl_raw %>%
+  mutate(
+    loss_2001_2020 = rowSums(across(starts_with("tc_loss_ha_")), na.rm = TRUE),
+    extent_2020_ha  = extent_2000_ha + (gain_ha - loss_2001_2020)
+  )
+
+states_sf <- geobr::read_state(year = 2010, showProgress = FALSE) %>%
+  select(code_state, name_state)
+
+tcl <- tcl %>%
+  left_join(states_sf, by = "name_state")
+```
+
+```{r}
+
+tcl <- tcl %>% mutate(code_state = as.character(code_state))
+
+muni_sf <- geobr::read_municipality(year = 2010, showProgress = FALSE) %>%
+  mutate(code_state = as.character(code_state)) %>%
+  select(code_muni, code_state, name_muni, geometry = geom)
+
+mapping_BR <- tcl %>%
+  left_join(muni_sf, by = c("code_state", "name_muni")) %>%
+  filter(!st_is_empty(geometry))
+
+```
+
+```{r}
+# Identify top 10 by absolute loss
+hotspots <- mapping_BR %>%
+  arrange(desc(loss_2001_2020)) %>%
+  slice_head(n = 10)
+
+# Bar chart
+ggplot(hotspots, aes(x = reorder(name_muni, loss_2001_2020), 
+                     y = loss_2001_2020 / 1000)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Municipalities by Total Tree‐Cover Loss (2001–2020)",
+    x = NULL,
+    y = "Total Loss (thousands of ha)"
+  ) +
+  theme_minimal()
+
+# Map of those hotspots
+ggplot() +
+  geom_sf(data = hotspots, 
+          aes(fill = loss_2001_2020, geometry = geometry), 
+          color = NA) +
+  scale_fill_viridis_c(option = "magma", labels = scales::comma) +
+  labs(
+    title = "Hotspot Municipalities (2001–2020)",
+    fill = "Loss (ha)"
+  ) +
+  theme_void()
+```
+
+```{r}
+state_summary <- mapping_BR %>%
+  group_by(name_state) %>%
+  summarise(
+    mean_pct_change = mean((extent_2020_ha - extent_2000_ha) / area_ha * 100, na.rm = TRUE)
+  ) %>%
+  arrange(mean_pct_change)
+
+ggplot(state_summary, aes(
+    x = reorder(name_state, mean_pct_change),
+    y = mean_pct_change
+  )) +
+  geom_col(fill = "coral") +
+  coord_flip() +
+  labs(
+    title = "Average % Tree Cover Change (2000–2020) by State",
+    x = NULL,
+    y = "Mean % Change"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# 5a) Read and repair Indigenous geometries
+indigenous <- geobr::read_indigenous_land(showProgress = FALSE) %>%
+  st_make_valid()
+
+# 5b) Repair municipality geometries too
+mapping_BR <- mapping_BR %>%
+  mutate(geometry = st_make_valid(geometry))
+
+# 5c) Flag intersection
+mapping_BR <- mapping_BR %>%
+  mutate(
+    in_indig   = lengths(st_intersects(geometry, indigenous)) > 0,
+    pct_change = (extent_2020_ha - extent_2000_ha) / area_ha * 100
+  )
+
+# 5d) Run t-test
+tt <- t.test(pct_change ~ in_indig, data = mapping_BR)
+
+# 5e) Plot
+ggplot(mapping_BR, aes(
+    x = in_indig,
+    y = pct_change
+  )) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c("Non‑Indigenous", "Indigenous")) +
+  labs(
+    title    = "Tree Cover Change (2000–2020): Indigenous vs. Non‑Indigenous",
+    x        = NULL,
+    y        = "% Change",
+    subtitle = paste0("p‑value = ", signif(tt$p.value, 3))
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+library(tibble)
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+presidents <- tibble(
+  name    = c(
+    "Fernando Henrique Cardoso",
+    "Luiz Inácio Lula da Silva",
+    "Dilma Rousseff",
+    "Michel Temer",
+    "Jair Bolsonaro",
+    "Luiz Inácio Lula da Silva"
+  ),
+  start   = c(2000, 2003, 2011, 2016, 2019, 2023),
+  end     = c(2002, 2010, 2015, 2018, 2022, 2023),
+  leaning = c(
+    "Center‑Right",
+    "Left",
+    "Left",
+    "Center‑Right",
+    "Right",
+    "Left"
+  )
+) %>%
+  mutate(year = map2(start, end, seq)) %>%
+  select(-start, -end) %>%
+  unnest(year)
+
+presidents
+```
+
+```{r}
+tcl_raw <- read_csv("data/raw/Brazil_TreeCoverLoss.csv",
+                    col_types = cols())
+
+# Filter for Brazil  30% threshold and pivot long
+tcl_long <- tcl_raw %>%
+  filter(country == "Brazil", threshold == 30) %>%
+  select(-country, -threshold) %>%
+  pivot_longer(
+    cols      = starts_with("tc_loss_ha_"),
+    names_to  = "year",
+    values_to = "loss_ha"
+  ) %>%
+  mutate(
+    year     = parse_number(year),        
+    loss_pct = loss_ha / area_ha * 100    
+  )
+
+write_rds(tcl_long, "data/tcl_long.rds")
+
+tcl_long %>% slice_head(n = 10)
+```
+
+```{r}
+# Join tree‑cover data to the presidents leanings
+tcl_with_leaning <- tcl_long %>% 
+  left_join(presidents, by = "year")
+
+tcl_with_leaning %>% slice_head(n = 6)
+```
+
+```{r}
+# Summarize total loss by leaning
+summary_by_leaning <- tcl_with_leaning %>%
+  group_by(leaning, year) %>%
+  summarise(
+    total_loss_ha = sum(loss_ha, na.rm = TRUE),
+    avg_loss_pct  = mean(loss_pct, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# View the result as a tibble
+summary_by_leaning
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(summary_by_leaning, aes(x = year, y = total_loss_ha / 1e3, color = leaning)) +
+  geom_line() +
+  labs(
+    title = "Annual tree cover loss by political leaning",
+    x     = "Year",
+    y     = "Loss (×1000 ha)"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+tcl_long %>%
+  left_join(pres_years, by="year") %>%
+  group_by(year, name, leaning) %>%     # name = president
+  summarise(total_loss = sum(loss_ha), .groups="drop") %>%
+  ggplot(aes(x=year, y=total_loss/1000, group=name, color=leaning)) +
+    geom_line() 
+```
+
+# Point
+
+# hacer una linea y colorear el segmento
+
+# 
+
+```{r}
+library(tidyverse)
+
+tcl_raw <- read_csv("data/raw/Brazil_TreeCoverLoss.csv", col_types = cols())
+
+tcl_long <- tcl_raw %>%
+  filter(country == "Brazil", threshold == 30) %>%
+  select(-country, -threshold) %>%
+  pivot_longer(
+    cols      = starts_with("tc_loss_ha_"),
+    names_to  = "year",
+    values_to = "loss_ha"
+  ) %>%
+  mutate(year     = parse_number(year),  loss_k   = loss_ha / 1000)
+
+# Presidents
+presidents <- tibble(
+  name    = c(
+    "Fernando Henrique Cardoso",
+    "Luiz Inácio Lula da Silva",
+    "Dilma Rousseff",
+    "Michel Temer",
+    "Jair Bolsonaro",
+    "Luiz Inácio Lula da Silva"
+  ),
+  start   = c(2000, 2003, 2011, 2016, 2019, 2023),
+  end     = c(2002, 2010, 2015, 2018, 2022, 2023),
+  leaning = c(
+    "Center/Right",
+    "Left",
+    "Left",
+    "Center/Right",
+    "Right",
+    "Left"
+  )
+)
+
+pres_years <- presidents %>%
+  rowwise() %>%
+  mutate(year = list(start:end)) %>%  
+  unnest(year) %>%
+  select(name, year, leaning)
+
+# Join & summarize 
+annual_loss <- tcl_long %>%
+  left_join(pres_years, by = "year") %>%
+  group_by(year, name, leaning) %>%
+  summarise(total_loss_k = sum(loss_k, na.rm = TRUE), .groups = "drop")
+
+ggplot(annual_loss, aes(x=year, y=total_loss_k, color=leaning)) +
+  geom_line(size=1.2) +
+  geom_point(size=2) +
+  scale_color_brewer(palette="Set1", name="Political Leaning") +
+  scale_x_continuous(breaks=seq(2000,2020,5)) +
+  labs(
+    title    = "Annual tree cover loss by political leaning",
+    subtitle = "Total loss (×1000 ha), grouped by the party orientation in power",
+    x        = "Year",
+    y        = "Loss (×1000 ha)"
+  ) +
+  theme_minimal(base_size=14) +
+  theme(
+    legend.position = "bottom",
+    plot.title      = element_text(face="bold", size=16),
+    plot.subtitle   = element_text(size=12),
+    axis.text       = element_text(color="gray20")
+  )
+
+```
+
+```{r}
+library(tidyverse)
+
+tcl_long <- read_csv("data/raw/Brazil_TreeCoverLoss.csv", col_types = cols()) %>%
+  filter(country == "Brazil", threshold == 30) %>%
+  select(-country, -threshold) %>%
+  pivot_longer(
+    cols      = starts_with("tc_loss_ha_"),
+    names_to  = "year",
+    values_to = "loss_ha") %>%
+  mutate(year   = parse_number(year),
+    loss_k = loss_ha / 1000)
+
+# tibble ! 
+presidents <- tibble(
+  name    = c(
+    "Fernando Henrique Cardoso",
+    "Luiz Inácio Lula da Silva",
+    "Dilma Rousseff",
+    "Michel Temer",
+    "Jair Bolsonaro",
+    "Luiz Inácio Lula da Silva"
+  ),
+  start   = c(2000, 2003, 2011, 2016, 2019, 2023),
+  end     = c(2002, 2010, 2015, 2018, 2022, 2023),
+  leaning = c(
+    "Center-Right",
+    "Left",
+    "Left",
+    "Center-Right",
+    "Right",
+    "Left"
+  )
+)
+
+pres_years <- presidents %>%
+  rowwise() %>%
+  mutate(year = list(start:end)) %>%
+  unnest(year) %>%
+  select(year, name, leaning)
+
+# annual total loss per year + party
+annual_loss <- tcl_long %>%
+  left_join(pres_years, by="year") %>%
+  group_by(year, name, leaning) %>%
+  summarise(total_loss_k = sum(loss_k, na.rm=TRUE), .groups="drop")
+
+# segments
+segments <- annual_loss %>%
+  arrange(year) %>%
+  mutate(year_next = lead(year), loss_next = lead(total_loss_k)) %>%
+  filter(!is.na(year_next))
+
+ggplot() +
+  # colored segments
+  geom_segment(
+    data = segments,
+    aes(x = year, xend = year_next, y= total_loss_k, yend = loss_next, color = leaning),
+    size = 1) +
+  # black dots at each year
+  geom_point(data = annual_loss, aes(x = year, y = total_loss_k), color = "black", size = 2) +
+  scale_color_brewer(palette = "Set1", name = "Political Leaning") +
+  scale_x_continuous(breaks = seq(2000, 2023, by = 3)) +
+  labs(title    = "Annual tree cover loss by political leaning", x = "Year",y= "Loss (×1000 ha)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold", size = 16), plot.subtitle   = element_text(size = 12))
+```
+
+
+
+```{r}
+pres_years <- presidents %>%
+  rowwise() %>%
+  mutate(year = list(start:end)) %>%
+  unnest(year) %>%
+  select(year, name, leaning)
+
+# rectangle moment
+ribbons <- pres_years %>% 
+  group_by(name, leaning) %>% 
+  summarize(xmin = min(year) - 0.5, xmax = max(year) + 0.5, .groups = "drop")
+
+ggplot() +
+  geom_rect(data = ribbons, aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = +Inf, fill = leaning), alpha = 0.2) +
+  geom_line(data = annual_loss, aes(x = year, y = total_loss_k), size = 0.8, color = "black") +
+  geom_point(data = annual_loss, aes(x = year, y = total_loss_k), color = "black", size = 2) +
+  scale_fill_brewer(palette = "Set1", name = "Political Leaning") +
+  labs(title    = "Annual tree cover loss, with political leaning", x = "Year", y = "Loss (×1000 ha)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom")
+```
+
+> 
+```{r}
+```
+
+
+
+
+
+

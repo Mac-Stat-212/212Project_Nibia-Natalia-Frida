@@ -14,7 +14,7 @@ library(ggplot2)
 library(geobr)
 ```
 
-## Exploring R package geobr 
+## Exploring R package geobr
 
 ```{r}
 datasets <- list_geobr()
@@ -22,6 +22,7 @@ datasets <- list_geobr()
 head(datasets)
 
 ```
+
 ## Plotting base states
 
 ```{r cache=TRUE}
@@ -62,7 +63,6 @@ ggplot() +
   theme_minimal() +
   no_axis
 ```
-
 
 ## Calling BR tree cover loss datasets
 
@@ -152,7 +152,6 @@ mapping_BR_checkNAs <- mapping_BR %>%
   pull(subnational1, subnational2) 
 mapping_BR_checkNAs
 ```
-
 
 #Plotting Extent of Tree coverage of at least over 30%
 
@@ -252,6 +251,7 @@ ggsave(
 )
 ## Multipoligon empty
 ```
+
 # Making the graph clearer
 
 ```{r}
@@ -340,6 +340,7 @@ tree_extent_change_2000_2020_basedOnOGconditions
 
 
 ```
+
 #Slider para Natalia
 
 ```{r}
@@ -385,4 +386,3 @@ tree_extent_interactive <- tree_extent_interactive %>%
 tree_extent_interactive
 
 ```
-

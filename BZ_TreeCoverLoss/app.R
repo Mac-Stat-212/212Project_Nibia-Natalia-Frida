@@ -124,7 +124,7 @@ custom_colors <- c("Large proportional gain" = "#138030", "Slight proportional g
 
 
 
-# Define UI for application that draws a histogram
+# Define UI (user inputs) for application
 ui <- fluidPage(
   
   # Application title

@@ -15,7 +15,7 @@ library(geobr)
 
 # loading data
 
-tree_cover_loss <- read.csv("../../data/raw/Brazil_TreeCoverLoss.csv")
+tree_cover_loss <- read.csv("~/Desktop/2024-2025/Spring 2025/STAT_212/Project_name/stat212-final-project/data/raw/Brazil_TreeCoverLoss.csv")
 
 ## Mapping data
 ### State data
@@ -38,7 +38,7 @@ state_nameBR <- states %>% pull(name_state) %>% unique()
 
 # Making loss over time
 
-tree_cover_loss_brazil <- tree_cover_loss_brazil %>% 
+tree_cover_loss_brazil <- tree_cover_loss  %>% 
   mutate(
     loss_2000.2020_ha = tc_loss_ha_2001+tc_loss_ha_2002+tc_loss_ha_2003+tc_loss_ha_2004+tc_loss_ha_2005+tc_loss_ha_2006+tc_loss_ha_2007+tc_loss_ha_2008+tc_loss_ha_2009+tc_loss_ha_2010+tc_loss_ha_2011+tc_loss_ha_2012+tc_loss_ha_2013+tc_loss_ha_2014+tc_loss_ha_2015+tc_loss_ha_2016+tc_loss_ha_2017+tc_loss_ha_2018+tc_loss_ha_2019+tc_loss_ha_2020
   ) %>% 
@@ -122,6 +122,54 @@ mapping_BR <- mapping_BR %>%
 
 custom_colors <- c("Large proportional gain" = "#138030", "Slight proportional gain" = "#19a93f", "No proportional gain or loss" ="#ddb588" , "Slight proportional loss" =  "#d37d4f", "Large proportional loss" = "#985125", "Extremely large proportional loss" =  "#623518","Less than 20% tree cover in 2000" = "#9e9e9e",  "No data available"= "#000000")
 
+# data
+tree_cover_loss <- tree_cover_loss %>%
+  filter(country == "Brazil", threshold == 30) %>%
+  select(-country, -threshold) %>%
+  pivot_longer(
+    cols      = starts_with("tc_loss_ha_"),
+    names_to  = "year",
+    values_to = "loss_ha") %>%
+  mutate(year   = parse_number(year),
+         loss_k = loss_ha / 1000)
+
+annual_loss <- tree_cover_loss %>%
+  left_join(pres_years, by="year") %>%
+  group_by(year, name, leaning) %>%
+  summarise(total_loss_k = sum(loss_k, na.rm=TRUE), .groups="drop")
+
+# president / political leaning tibble
+presidents <- tibble(
+  name    = c(
+    "Fernando Henrique Cardoso",
+    "Luiz Inácio Lula da Silva",
+    "Dilma Rousseff",
+    "Michel Temer",
+    "Jair Bolsonaro",
+    "Luiz Inácio Lula da Silva"
+  ),
+  start   = c(2000, 2003, 2011, 2016, 2019, 2023),
+  end     = c(2002, 2010, 2015, 2018, 2022, 2023),
+  leaning = c(
+    "Center/Right",
+    "Left",
+    "Left",
+    "Center/Right",
+    "Right",
+    "Left"
+  )
+)
+
+pres_years <- presidents %>%
+  rowwise() %>%
+  mutate(year = list(start:end)) %>%  
+  unnest(year) %>%
+  select(name, year, leaning)
+
+# rectangle moment
+ribbons <- pres_years %>% 
+  group_by(name, leaning) %>% 
+  summarize(xmin = min(year) - 0.5, xmax = max(year) + 0.5, .groups = "drop")
 
 
 # Define UI for application that draws a histogram
@@ -146,7 +194,7 @@ ui <- fluidPage(
              # Show a plot of the generated distribution
              mainPanel(
                fluidRow(
-                 column(12, plotlyOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"))
+                 column(12, plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"))
                ),
                fluidRow(
                  column(6, plotOutput("line_STATE_tree_cover_loss")),
@@ -163,16 +211,18 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  output$line_COUNTRY_tree_cover_by_political_leaning_plot <- renderPlotly({
-    p <- data_by_dist %>% 
-      filter(metro_name == input$city) %>% 
-      ggplot(aes(x= distmiles, y = entropy))+
-      geom_point(aes(key = tract_id))+
-      geom_smooth(se = FALSE, method = 'loess', span = input$span)+
-      labs(title = "Diversity Gradient (2020 Census)", x = "Distance from city hall (miles)", y = "Diversity score" )
+  output$line_COUNTRY_tree_cover_by_political_leaning_plot <- renderPlot({
+    p <- ggplot() +
+      geom_rect(data = ribbons, aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = +Inf, fill = leaning), alpha = 0.2) +
+      geom_line(data = annual_loss, aes(x = year, y = total_loss_k), size = 0.8, color = "black") +
+      geom_point(data = annual_loss, aes(x = year, y = total_loss_k), color = "black", size = 2) +
+      scale_fill_brewer(palette = "Set1", name = "Political Leaning") +
+      labs(title    = "Annual tree cover loss, with political leaning", x = "Year", y = "Loss (×1000 ha)") +
+      theme_minimal(base_size = 14) +
+      theme(legend.position = "bottom")
     
-    ggplotly(p, source = "plotly_scatterplot") %>%
-      event_register("plotly_selected")
+    p
+    
   })
   
   output$map_plot <- renderPlot({

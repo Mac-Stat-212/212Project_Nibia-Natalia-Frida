@@ -163,15 +163,11 @@ example_states <- c("Amazonas", "Pará", "Mato Grosso", "Rondônia")
 annual_tc_loss <- function(state){
   
   ggplot(filter(state_loss, subnational1 %in% state), aes(x = year, y = total_loss)) +
-    geom_line(color = "Annual Loss") +
-    geom_line(aes(y = roll_avg_3yr, color = "3-Year Rolling Avg"), size = 1) +
-    geom_smooth(aes(color = "Linear Trend"), method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
+    geom_line(color = "gray70") +
+    geom_line(aes(y = roll_avg_3yr), color = "darkgreen", size = 1) +
+    geom_smooth(color = "red", method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
     facet_wrap(~ subnational1, scales = "free_y") +
     scale_y_continuous(labels = label_number(scale = 1/1000, suffix = "k", accuracy = 1)) +
-    scale_color_manual(name = "Line Type",
-                      values = c("Annual Loss" = "gray70",
-                                 "3-Year Rolling Avg" = "darkgreen",
-                                 "Linear Trend" = "red"))+
     labs(title = "Annual Tree Cover Loss in Select Brazilian States",
         subtitle = "With 3-year rolling average and linear trend line (2001–2023)",
         y = "Tree Cover Loss (thousands of ha)",

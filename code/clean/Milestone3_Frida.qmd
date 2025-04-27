@@ -24,6 +24,7 @@ tree_cover_loss_brazil <- tree_cover_loss_brazil %>%
 view(tree_cover_loss_brazil)
 colnames(tree_cover_loss_brazil)
 ```
+
 ```{r}
 # Data from wide to long format
 
@@ -57,10 +58,10 @@ ggplot(tree_loss_summary, aes(x = year, y = total_loss)) +
   theme_minimal()
 
 ```
+
 ```{r}
 # Shapefile
-muni_sf <- geobr::read_municipality(year = 2010,
-                                    showProgress = FALSE)
+muni_sf <- geobr::read_municipality(year = 2010,showProgress = FALSE)
 
 mapping_BR <- tree_cover_loss_brazil %>%
   left_join(muni_sf, by = "name_muni")
@@ -71,6 +72,7 @@ mapping_BR <- mapping_BR %>%
     relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100
   )
 ```
+
 ```{r}
 mapping_BR <- mapping_BR %>%
   mutate(total_loss_ha = rowSums(across(starts_with("tc_loss_ha_")), na.rm = TRUE))
@@ -82,4 +84,3 @@ ggplot() +
   labs(title = "Tree Cover Loss (2001–2023) by Municipality") +
   theme_void()
 ```
-

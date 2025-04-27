@@ -24,6 +24,7 @@ tree_cover_loss_brazil <- tree_cover_loss_brazil %>%
 view(tree_cover_loss_brazil)
 colnames(tree_cover_loss_brazil)
 ```
+
 ```{r}
 # Data from wide to long format
 
@@ -57,6 +58,7 @@ ggplot(tree_loss_summary, aes(x = year, y = total_loss)) +
   theme_minimal()
 
 ```
+
 ```{r}
 # Shapefile
 muni_sf <- geobr::read_municipality(year = 2010,
@@ -71,6 +73,7 @@ mapping_BR <- mapping_BR %>%
     relative_extent_per_size2010 =  (extent_2010_ha/area_ha)*100
   )
 ```
+
 ```{r}
 mapping_BR <- mapping_BR %>%
   mutate(total_loss_ha = rowSums(across(starts_with("tc_loss_ha_")), na.rm = TRUE))
@@ -82,7 +85,6 @@ ggplot() +
   labs(title = "Tree Cover Loss (2001–2023) by Municipality") +
   theme_void()
 ```
-
 
 ```{r}
 # Data
@@ -135,7 +137,6 @@ min_val <- min(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_
 max_val <- max(mapping_BR$relative_change_2000_2010, mapping_BR$relative_change_2000_2020, na.rm = TRUE)
 ```
 
-
 ```{r}
 indigenous <- geobr::read_indigenous_land()
 
@@ -155,6 +156,7 @@ ggplot() +
     plot.caption = element_text(size = 8)
   )
 ```
+
 ```{r}
 names(indigenous)
 
@@ -192,7 +194,7 @@ ggplot() +
 
 ```
 
-# Para y Amazonas 
+# Para y Amazonas
 
 ```{r}
 all_muni <- read_municipality(
@@ -222,6 +224,7 @@ ggplot() +
   ) +
   theme_void()
 ```
+
 ```{r}
 mapping_PA <- mapping_PA %>%
   mutate(intersects_indigenous = lengths(st_intersects(geom, indigenous_PA)) > 0)
@@ -277,6 +280,3 @@ mapping_AM %>%
 # Simple statistical test:
 t.test(relative_change_2000_2020 ~ intersects_indigenous, data = mapping_AM)
 ```
-
-
-

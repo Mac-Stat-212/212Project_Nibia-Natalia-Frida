@@ -12,6 +12,8 @@ library(tidyverse)
 library(sf)
 library(plotly)
 library(geobr)
+library(zoo)
+library(scales)
 
 # loading data
 
@@ -255,12 +257,49 @@ server <- function(input, output) {
   })
   
   output$line_STATE_tree_cover_loss <- renderPlot({
-    p <- race_dist %>%  
-      filter(metro_name == input$city) %>% 
-      ggplot(aes(x=race, y = total)) +
-      geom_col()+
-      labs(title = "Race/ethnicity, selected city", x = "Race/ethnicity", y = "Population")
-    p
+    
+    # Join all tc_loss_ha in one column
+    data_long <- mapping_BR %>% 
+      select(name_state, name_muni, area_ha, starts_with("tc_loss_ha_"), geom) %>%
+      pivot_longer(cols = starts_with("tc_loss_ha_"),
+                   names_to = "year",
+                   values_to = "loss_ha") %>%
+      mutate(year = as.numeric(gsub("tc_loss_ha_", "", year)),
+             loss_pct = (loss_ha / area_ha) * 100)
+    
+    # Summarize total loss per state per year
+    state_loss <- data_long %>%
+      group_by(name_state, year) %>%
+      summarise(total_loss = sum(loss_ha, na.rm = TRUE), .groups = "drop") %>%
+      group_by(name_state) %>%
+      arrange(year) %>%
+      mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
+    
+    state_long <- data_long %>% 
+      group_by(name_state, year) %>%
+      summarise(
+        weighted_loss_pct = weighted.mean(loss_pct, area_ha, na.rm = TRUE),
+        .groups = "drop"
+      )
+    
+    cum_perc <- data_long %>%
+      arrange(name_state, name_muni, year) %>%  # Ensure it's ordered by state, municipality, and year
+      group_by(name_state, name_muni) %>%
+      mutate(remaining_tree_pct = 100 - cumsum(loss_pct)) %>%
+      ungroup()
+    
+    p <- ggplot(filter(state_loss, input$state), aes(x = year, y = total_loss)) +
+      geom_line(color = "gray70") +
+      geom_line(aes(y = roll_avg_3yr), color = "darkgreen", size = 1) +
+      geom_smooth(color = "red", method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
+      scale_y_continuous(labels = label_number(scale = 1/1000, suffix = "k", accuracy = 1)) +
+      labs(title = "Annual Tree Cover Loss in Select Brazilian States",
+           subtitle = "With 3-year rolling average and linear trend line (2001–2023)",
+           y = "Tree Cover Loss (thousands of ha)",
+           x = "Year") +
+      theme_minimal()
+    
+    print(p)
   })
 }
 

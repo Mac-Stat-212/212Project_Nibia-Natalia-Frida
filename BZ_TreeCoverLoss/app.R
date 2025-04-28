@@ -14,6 +14,7 @@ library(plotly)
 library(geobr)
 library(zoo)
 library(scales)
+library(bslib)
 
 # loading data
 
@@ -124,6 +125,11 @@ mapping_BR <- mapping_BR %>%
 
 custom_colors <- c("Large proportional gain" = "#138030", "Slight proportional gain" = "#19a93f", "No proportional gain or loss" ="#ddb588" , "Slight proportional loss" =  "#d37d4f", "Large proportional loss" = "#985125", "Extremely large proportional loss" =  "#623518","Less than 20% tree cover in 2000" = "#9e9e9e",  "No data available"= "#000000")
 
+
+
+
+
+
 # data
 tree_cover_loss <- tree_cover_loss %>%
   filter(country == "Brazil", threshold == 30) %>%
@@ -175,29 +181,37 @@ ribbons <- pres_years %>%
 
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- page_navbar(
   
   # Application title
-  titlePanel("Presidential Political Leaning and Tree Cover Loss in Brazil 2000-"),
+  title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-",
+  inverse = TRUE,
   
   # Dropdown 
-  tabPanel("Explore",
-           sidebarLayout(
-             sidebarPanel(
-               selectInput(inputId = "state" , label = "Select state:", choices = state_nameBR ),
+  nav_panel(title = "Explore",
+            
+           layout_sidebar(
+             
+             sidebar = sidebar(
+               selectInput("state", 
+                           "Select state:", 
+                           state_nameBR),
+               
                sliderInput("year",
                            "Select year:",
                            min = 2000,
                            max = 2023,
-                           value = 2012)
+                           value = 2012,
+                           step = 1)
                
              ),
              
-             # Show a plot of the generated distribution
-             mainPanel(
-               fluidRow(
-                 column(12, plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"))
-               ),
+             layout_column_wrap(width = 1, 
+             
+             # Show three plots
+            
+               plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"),
+               
                fluidRow(
                  column(6, plotOutput("line_STATE_tree_cover_loss")),
                  column(6, plotOutput("map_State_tcl_by_municipality"))
@@ -205,8 +219,8 @@ ui <- fluidPage(
              )
            )
   ),
-  tabPanel("Compare over time"),
-  tabPanel("About")
+  nav_panel("Compare over time", h4("-")),
+  nav_panel("About", h4("-"))
 )
 
 
@@ -227,32 +241,13 @@ server <- function(input, output) {
     
   })
   
-  output$map_plot <- renderPlot({
-    
-    metro_data <- data_by_dist %>% 
-      filter(metro_name == input$city)
-    ed <- event_data("plotly_selected", source = "plotly_scatterplot")
-    
-    if (is.null(ed)) {
-      p <- ggplot(metro_data) +
-        geom_sf(aes(fill = entropy)) +
-        labs(title = "Map of diversity scores (2020 US census)", fill = "Diversity Score") +
-        theme_minimal()
-    } else {
-      selected_tracts <-  metro_data %>% filter(tract_id %in% ed$key)
-      bbox_selected <- st_bbox(selected_tracts)
+  output$map_State_tcl_by_municipality <- renderPlot({
       
-      p <- data_by_dist %>% 
-        filter(metro_name == input$city) %>% 
-        #sf::st_cast("MULTIPOLYGON") %>% 
-        ggplot(aes(fill = entropy)) +
-        geom_sf() +
-        geom_sf(data = selected_tracts, color = "red") +
-        theme_classic()+
-        coord_sf(xlim = c(bbox_selected["xmin"], bbox_selected["xmax"]),
-                 ylim = c(bbox_selected["ymin"], bbox_selected["ymax"])
-        ) 
-    }
+      p <- ggplot() +
+        geom_sf(data = mapping_BR, aes(fill = actualChange, geometry = geom),  lwd = 0.02) + 
+        scale_fill_manual(values = custom_colors, name = "Gain or loss (%)") + 
+        labs(title = "Brazil Tree Cover Extent Change from 2000-2020 by municipality", subtitle = "Change only for municipalities with more than 20% tree cover in 2000") +
+        theme_void()
     p
   })
   
@@ -262,33 +257,21 @@ server <- function(input, output) {
     data_long <- mapping_BR %>% 
       select(name_state, name_muni, area_ha, starts_with("tc_loss_ha_"), geom) %>%
       pivot_longer(cols = starts_with("tc_loss_ha_"),
-                   names_to = "year",
+                   names_to = "year_tc",
                    values_to = "loss_ha") %>%
-      mutate(year = as.numeric(gsub("tc_loss_ha_", "", year)),
+      mutate(year_tc = as.numeric(gsub("tc_loss_ha_", "", year_tc)),
              loss_pct = (loss_ha / area_ha) * 100)
     
     # Summarize total loss per state per year
     state_loss <- data_long %>%
-      group_by(name_state, year) %>%
+      filter(name_state == input$state) %>% 
+      group_by(year_tc) %>% 
       summarise(total_loss = sum(loss_ha, na.rm = TRUE), .groups = "drop") %>%
-      group_by(name_state) %>%
-      arrange(year) %>%
+      arrange(year_tc) %>%
       mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
     
-    state_long <- data_long %>% 
-      group_by(name_state, year) %>%
-      summarise(
-        weighted_loss_pct = weighted.mean(loss_pct, area_ha, na.rm = TRUE),
-        .groups = "drop"
-      )
-    
-    cum_perc <- data_long %>%
-      arrange(name_state, name_muni, year) %>%  # Ensure it's ordered by state, municipality, and year
-      group_by(name_state, name_muni) %>%
-      mutate(remaining_tree_pct = 100 - cumsum(loss_pct)) %>%
-      ungroup()
-    
-    p <- ggplot(filter(state_loss, input$state), aes(x = year, y = total_loss)) +
+  
+    p <- ggplot(data= state_loss, aes(x = year_tc, y = total_loss)) +
       geom_line(color = "gray70") +
       geom_line(aes(y = roll_avg_3yr), color = "darkgreen", size = 1) +
       geom_smooth(color = "red", method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
@@ -299,7 +282,7 @@ server <- function(input, output) {
            x = "Year") +
       theme_minimal()
     
-    print(p)
+    p
   })
 }
 

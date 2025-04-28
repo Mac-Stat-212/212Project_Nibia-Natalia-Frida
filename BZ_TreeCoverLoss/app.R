@@ -59,7 +59,8 @@ tree_cover_loss_brazil <- tree_cover_loss_brazil %>%
   mutate(name_muni = subnational2)
 
 mapping_BR <- tree_cover_loss_brazil %>%
-  left_join(muni_sf, by = "name_muni")
+  left_join(muni_sf, by = "name_muni") %>%
+  rename(name_state = subnational1)
 
 head(mapping_BR)
 
@@ -141,11 +142,6 @@ tree_cover_loss <- tree_cover_loss %>%
   mutate(year   = parse_number(year),
          loss_k = loss_ha / 1000)
 
-annual_loss <- tree_cover_loss %>%
-  left_join(pres_years, by="year") %>%
-  group_by(year, name, leaning) %>%
-  summarise(total_loss_k = sum(loss_k, na.rm=TRUE), .groups="drop")
-
 # president / political leaning tibble
 presidents <- tibble(
   name    = c(
@@ -173,6 +169,12 @@ pres_years <- presidents %>%
   mutate(year = list(start:end)) %>%  
   unnest(year) %>%
   select(name, year, leaning)
+
+
+annual_loss <- tree_cover_loss %>%
+  left_join(pres_years, by="year") %>%
+  group_by(year, name, leaning) %>%
+  summarise(total_loss_k = sum(loss_k, na.rm=TRUE), .groups="drop")
 
 # rectangle moment
 ribbons <- pres_years %>% 
@@ -214,7 +216,7 @@ ui <- page_navbar(
                
                fluidRow(
                  column(6, plotOutput("line_STATE_tree_cover_loss")),
-                 column(6, plotOutput("map_State_tcl_by_municipality"))
+                 column(6, plotlyOutput("map_State_tcl_by_municipality"))
                )
              )
            )
@@ -222,6 +224,23 @@ ui <- page_navbar(
   nav_panel("Compare over time", h4("-")),
   nav_panel("About", h4("-"))
 )
+
+
+# Join all tc_loss_ha in one column
+data_long <- mapping_BR %>% 
+  select(name_state, name_muni, area_ha, starts_with("tc_loss_ha_"), geom) %>%
+  pivot_longer(cols = starts_with("tc_loss_ha_"),
+               names_to = "year_tc",
+               values_to = "loss_ha") %>%
+  mutate(year_tc = as.numeric(gsub("tc_loss_ha_", "", year_tc)),
+         loss_pct = (loss_ha / area_ha) * 100)
+
+# Summarize total loss per state per year
+state_loss <- data_long %>%
+  group_by(year_tc, name_state) %>% 
+  summarise(total_loss = sum(loss_ha, na.rm = TRUE), .groups = "drop") %>%
+  arrange(year_tc) %>%
+  mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
 
 
 # Define server logic required to draw a histogram
@@ -241,7 +260,7 @@ server <- function(input, output) {
     
   })
   
-  output$map_State_tcl_by_municipality <- renderPlot({
+  output$map_State_tcl_by_municipality <- renderPlotly({
       
       p <- ggplot() +
         geom_sf(data = mapping_BR, aes(fill = actualChange, geometry = geom),  lwd = 0.02) + 
@@ -253,25 +272,9 @@ server <- function(input, output) {
   
   output$line_STATE_tree_cover_loss <- renderPlot({
     
-    # Join all tc_loss_ha in one column
-    data_long <- mapping_BR %>% 
-      select(name_state, name_muni, area_ha, starts_with("tc_loss_ha_"), geom) %>%
-      pivot_longer(cols = starts_with("tc_loss_ha_"),
-                   names_to = "year_tc",
-                   values_to = "loss_ha") %>%
-      mutate(year_tc = as.numeric(gsub("tc_loss_ha_", "", year_tc)),
-             loss_pct = (loss_ha / area_ha) * 100)
-    
-    # Summarize total loss per state per year
-    state_loss <- data_long %>%
+    p <- state_loss %>% 
       filter(name_state == input$state) %>% 
-      group_by(year_tc) %>% 
-      summarise(total_loss = sum(loss_ha, na.rm = TRUE), .groups = "drop") %>%
-      arrange(year_tc) %>%
-      mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
-    
-  
-    p <- ggplot(data= state_loss, aes(x = year_tc, y = total_loss)) +
+      ggplot(aes(x = year_tc, y = total_loss)) +
       geom_line(color = "gray70") +
       geom_line(aes(y = roll_avg_3yr), color = "darkgreen", size = 1) +
       geom_smooth(color = "red", method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +

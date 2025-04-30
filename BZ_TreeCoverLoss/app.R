@@ -7,6 +7,9 @@
 #    https://shiny.posit.co/
 #
 
+
+# NIBIA
+
 library(shiny)
 library(tidyverse)
 library(sf)
@@ -123,7 +126,7 @@ custom_colors <- c("Large proportional gain" = "#138030", "Slight proportional g
 
 
 
-
+# FRIDA
 
 
 # data
@@ -188,6 +191,9 @@ state_loss <- data_long %>%
   summarise(total_loss = sum(loss_ha, na.rm = TRUE), .groups = "drop") %>%
   arrange(year_tc) %>%
   mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
+
+
+#NATALIA
 
 
 # Define UI for application that draws a histogram

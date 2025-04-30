@@ -67,32 +67,32 @@ state_loss <- data_long %>%
   mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
 
 head(state_loss)
-head(data_long)
-
-para <- data_long %>% 
-  filter(subnational1 == "Pará")
-
-para
-
-state_long <- data_long %>% 
-  group_by(subnational1, year) %>%
-  summarise(
-    weighted_loss_pct = weighted.mean(loss_pct, area_ha, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-head(state_long)
+# head(data_long)
+# 
+# para <- data_long %>% 
+#   filter(subnational1 == "Pará")
+# 
+# para
+# 
+# state_long <- data_long %>% 
+#   group_by(subnational1, year) %>%
+#   summarise(
+#     weighted_loss_pct = weighted.mean(loss_pct, area_ha, na.rm = TRUE),
+#     .groups = "drop"
+#   )
+# 
+# head(state_long)
 ```
 
 ```{r}
-cum_perc <- data_long %>%
-  arrange(abbrev_state, name_muni, year) %>%  # Ensure it's ordered by state, municipality, and year
-  group_by(abbrev_state, name_muni) %>%
-  mutate(remaining_tree_pct = 100 - cumsum(loss_pct)) %>%
-  ungroup()
-
-# Check the first few rows
-head(cum_perc)
+# cum_perc <- data_long %>%
+#   arrange(abbrev_state, name_muni, year) %>%  # Ensure it's ordered by state, municipality, and year
+#   group_by(abbrev_state, name_muni) %>%
+#   mutate(remaining_tree_pct = 100 - cumsum(loss_pct)) %>%
+#   ungroup()
+# 
+# # Check the first few rows
+# head(cum_perc)
 
 ```
 

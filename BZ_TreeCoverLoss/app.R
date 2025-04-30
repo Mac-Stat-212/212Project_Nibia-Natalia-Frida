@@ -21,7 +21,7 @@ library(bslib)
 
 # loading data
 
-tree_cover_loss <- read.csv("~/Desktop/2024-2025/Spring 2025/STAT_212/Project_name/stat212-final-project/data/raw/Brazil_TreeCoverLoss.csv")
+tree_cover_loss <- read.csv("../data/raw/Brazil_TreeCoverLoss.csv")
 
 ## Mapping data
 ### State data

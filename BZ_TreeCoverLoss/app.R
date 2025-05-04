@@ -9,6 +9,7 @@ library(bslib)
 
 tree_cover_loss <- read.csv("~/Desktop/2024-2025/Spring 2025/STAT_212/Project_name/stat212-final-project/data/raw/Brazil_TreeCoverLoss.csv")
 
+brazil_outline <- geobr::read_country(year = 2010)
 states <- read_state(year = 2010, showProgress = FALSE)
 muni_sf <- read_municipality(year = 2010, showProgress = FALSE)
 state_nameBR <- unique(states$name_state)
@@ -157,11 +158,14 @@ server <- function(input, output) {
   output$map_State_tcl_by_municipality <- renderPlot({
     ggplot() +
       geom_sf(data = mapping_BR, aes(fill = actualChange, geometry = geom), lwd = 0.02) + 
+      geom_sf(data = brazil_outline, fill = NA, color = "black", lwd = 0.3) +  # adds country border
       scale_fill_manual(values = custom_colors, name = "Gain or loss (%)") + 
-      labs(title = "Brazil Tree Cover Extent Change from 2000–2020 by municipality",
-           subtitle = "Change only for municipalities with >20% tree cover in 2000") +
+      labs(
+        title = "Brazil Tree Cover Extent Change from 2000–2020 by Municipality",
+        subtitle = "Change only for municipalities with >20% tree cover in 2000.\nEmpty areas represent municipalities missing polygon data.") +
       theme_void()
   })
+  
   
   output$line_STATE_tree_cover_loss <- renderPlot({
     state_loss %>%
@@ -180,3 +184,4 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
+

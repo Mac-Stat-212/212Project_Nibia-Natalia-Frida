@@ -7,7 +7,7 @@ library(zoo)
 library(scales)
 library(bslib)
 
-tree_cover_loss <- read.csv("~/Desktop/2024-2025/Spring 2025/STAT_212/Project_name/stat212-final-project/data/raw/Brazil_TreeCoverLoss.csv")
+tree_cover_loss <- read.csv('/Users/fridamorado/Desktop/Desktop - MacBook Air de Frida (2)/STAT212/212Project_Nibia-Natalia-Frida/data/raw/Brazil_TreeCoverLoss.csv')
 
 brazil_outline <- geobr::read_country(year = 2010)
 states <- read_state(year = 2010, showProgress = FALSE)
@@ -74,8 +74,7 @@ mapping_BR_leanings <- mapping_BR %>%
   mutate(year_tc = parse_number(year_tc), loss_k = loss_ha / 1000)
 
 presidents <- tibble(
-  name = c("Fernando Henrique Cardoso", "Luiz Inácio Lula da Silva", "Dilma Rousseff", 
-           "Michel Temer", "Jair Bolsonaro", "Luiz Inácio Lula da Silva"),
+  name    = c("Fernando Henrique","Lula da Silva", "Dilma Rousseff","Michel Temer", "Jair Bolsonaro","Lula"),
   start = c(2000, 2003, 2011, 2016, 2019, 2023),
   end = c(2002, 2010, 2015, 2018, 2022, 2023),
   leaning = c("Center/Right", "Left", "Left", "Center/Right", "Right", "Left")
@@ -92,9 +91,12 @@ annual_loss <- mapping_BR_leanings %>%
   group_by(year_tc, name, leaning) %>%
   summarise(total_loss_k = sum(loss_k, na.rm = TRUE), .groups = "drop")
 
-ribbons <- pres_years %>%
-  group_by(name, leaning) %>%
-  summarise(xmin = min(year_tc) - 0.5, xmax = max(year_tc) + 0.5, .groups = "drop")
+y_max <- max(annual_loss$total_loss_k, na.rm = TRUE)
+
+
+ribbons <- presidents %>%
+  mutate(xmin    = start - 0.5 , xmax    = end + 0.5, xmid = (start + end) / 2) %>%
+  select(xmin, xmax, xmid, name, leaning)
 
 data_long <- mapping_BR %>%
   select(name_state, name_muni, area_ha, starts_with("tc_loss_ha_"), geom) %>%
@@ -132,13 +134,14 @@ ui <- page_navbar(
             )
   ),
   
-  nav_panel("About",
+  nav_panel("Political Leaning Plot",
             layout_sidebar(
               sidebar = sidebar(
                 sliderInput("year", "Select year:", min = 2000, max = 2023, value = 2012, step = 1)
               ),
               layout_column_wrap(width = 1,
-                                 plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"))
+                                 plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"),
+                                 h1("Stuff here"), p('a paragraph of text'))
             )
   )
 )
@@ -146,26 +149,33 @@ ui <- page_navbar(
 server <- function(input, output) {
   output$line_COUNTRY_tree_cover_by_political_leaning_plot <- renderPlot({
     ggplot() +
-      geom_rect(data = ribbons, aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = +Inf, fill = leaning), alpha = 0.2) +
+      geom_rect(data = ribbons, aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = +Inf, fill = factor(leaning)), alpha = 0.2) +
+      geom_vline(data = ribbons, aes(xintercept = xmin), linetype = "dashed", color = "grey28") +
       geom_line(data = annual_loss, aes(x = year_tc, y = total_loss_k), size = 0.8, color = "black") +
       geom_point(data = annual_loss, aes(x = year_tc, y = total_loss_k), color = "black", size = 2) +
-      scale_fill_brewer(palette = "Set1", name = "Political Leaning") +
-      labs(title = "Annual tree cover loss, with political leaning", x = "Year", y = "Loss (×1000 ha)") +
+      geom_text(data = ribbons, aes(x = xmid, label = name),
+                y           = y_max - 200, vjust       = 0, size        = 3.5, inherit.aes = FALSE) +
+      scale_fill_manual(name = "Political Leaning",
+                        values = c(
+                          "Left"         = "#377eb8",
+                          "Right"        = "#e41a1c",
+                          "Center/Right" = "#ffae42"
+                        )) +
+      scale_x_continuous(breaks = presidents$start,
+                         labels = presidents$start) +
+      labs(title = "Annual tree cover loss, with political leaning",
+           x     = "Year",
+           y     = "Loss (×1000 ha)") +
       theme_minimal(base_size = 14) +
-      theme(legend.position = "bottom")
-  })
-  
-  output$map_State_tcl_by_municipality <- renderPlot({
-    ggplot() +
-      geom_sf(data = mapping_BR, aes(fill = actualChange, geometry = geom), lwd = 0.02) + 
-      geom_sf(data = brazil_outline, fill = NA, color = "black", lwd = 0.3) +  # adds country border
-      scale_fill_manual(values = custom_colors, name = "Gain or loss (%)") + 
-      labs(
-        title = "Brazil Tree Cover Extent Change from 2000–2020 by Municipality",
-        subtitle = "Change only for municipalities with >20% tree cover in 2000.\nEmpty areas represent municipalities missing polygon data.") +
-      theme_void()
-  })
-  
+      theme(
+        legend.position      = "bottom",
+        plot.title.position  = "plot",           
+        plot.title           = element_text(
+          hjust  = 0.5,   # center
+          vjust  = 1.2,   # push up
+          margin = margin(t = 15)
+        )
+        ) })
   
   output$line_STATE_tree_cover_loss <- renderPlot({
     state_loss %>%
@@ -184,4 +194,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
-

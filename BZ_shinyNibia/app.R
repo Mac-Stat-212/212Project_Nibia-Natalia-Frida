@@ -115,10 +115,10 @@ ui <- page_navbar(
   title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-",
   inverse = TRUE,
   
-  nav_panel("Explore",
+  nav_panel("Tree Cover Loss in Brazil",
             layout_sidebar(
               sidebar = sidebar(
-                sliderInput("year", "Select year:", min = 2000, max = 2023, value = 2012, step = 1, sep = "")
+                sliderInput("year", "Select year:", min = 2000, max = 2020, value = 2000, step = 10, sep = "")
               ),
               layout_column_wrap(width = 1,
                                  plotOutput("tree_cover_map"), plotOutput("map_State_tcl_by_municipality"))
@@ -138,7 +138,7 @@ ui <- page_navbar(
   nav_panel("About",
             layout_sidebar(
               sidebar = sidebar(
-                sliderInput("year", "Select year:", min = 2000, max = 2023, value = 2012, step = 1)
+                sliderInput("year", "Select year:", min = 2000, max = 2020, value = 2000, step = 10)
               ),
               layout_column_wrap(width = 1,
                                  plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"))
@@ -172,9 +172,10 @@ server <- function(input, output) {
   
   output$tree_cover_map <- renderPlot({
     col_name <- str_c("relative_extent_per_size", input$year)
+    
     ggplot() +
       geom_sf(data = brazil_outline, fill = 'black', color = "black", lwd = 0.3) +
-      geom_sf(data = mapping_BR, aes(fill = col_name), color = NA) +
+      geom_sf(data = mapping_BR, aes(fill = !!sym(col_name)), color = NA) +
       scale_fill_gradient(low = "white", high = "#138030") +
       labs(
         title = paste("Relative Tree Cover in", input$year),
@@ -200,3 +201,4 @@ server <- function(input, output) {
 }
 
 shinyApp(ui = ui, server = server)
+

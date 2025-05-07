@@ -118,7 +118,7 @@ ui <- page_navbar(
   title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-",
   inverse = TRUE,
   
-  nav_panel("Explore",
+  nav_panel("Explore Tree Cover Loss in Brazil",
             layout_sidebar(
               sidebar = sidebar(
                 sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = "")
@@ -165,15 +165,16 @@ server <- function(input, output) {
   output$tree_cover_map <- renderPlot({
     col_name <- str_c("relative_extent_per_size", input$year)
     
-    ggplot() +
+      ggplot() +
       geom_sf(data = brazil_outline, fill = 'black', color = "black", lwd = 0.3) +
       geom_sf(data = mapping_BR, aes(fill = !!sym(col_name)), color = NA) +
       scale_fill_gradient(low = "white", high = "#138030") +
       labs(
         title = paste("Relative Tree Cover in", input$year),
-        subtitle = "Tree cover relative to municipality area"
+        subtitle = "Tree cover relative to municipality area", caption = 'Source: Global Forest Watch ; Missing values in black.'
       ) +
       theme_void()
+  
   })
   
   output$map_State_tcl_by_municipality <- renderPlot({
@@ -184,7 +185,7 @@ server <- function(input, output) {
       labs(
         title = "Brazil Tree Cover Extent Change from 2000–2020 by Municipality",
         subtitle = "Change only for municipalities with >20% tree cover in 2000.\nEmpty areas represent municipalities missing polygon data.",
-        caption = 'Source: ; Missing values in light yellow.') +
+        caption = 'Source: Global Forest Watch ; Missing values in black.') +
       theme_void()
   })
   

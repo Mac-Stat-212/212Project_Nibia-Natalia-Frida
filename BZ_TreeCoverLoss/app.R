@@ -7,7 +7,8 @@ library(zoo)
 library(scales)
 library(bslib)
 
-tree_cover_loss <- read.csv('~/Documents/STAT 212/Project/212Project_Nibia-Natalia-Frida/data/raw/Brazil_TreeCoverLoss.csv')
+#tree_cover_loss <- read.csv('/Users/fridamorado/Desktop/Desktop - MacBook Air de Frida (2)/STAT212/212Project_Nibia-Natalia-Frida/data/raw/Brazil_TreeCoverLoss.csv')
+tree_cover_loss <- read.csv("../data/raw/Brazil_TreeCoverLoss.csv")
 
 brazil_outline <- geobr::read_country(year = 2010)
 states <- read_state(year = 2010, showProgress = FALSE)

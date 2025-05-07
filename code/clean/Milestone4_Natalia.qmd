@@ -157,7 +157,7 @@ tc_2023
 -   Make notes of the lines
 
 ```{r warning = FALSE}
-example_states <- c("Amazonas", "Pará", "Mato Grosso", "Rondônia")
+example_states <- c("Amazonas", "Pará", "Mato Grosso", )
 
 # Plot annual tree cover loss
 annual_tc_loss <- function(state){
@@ -176,7 +176,7 @@ annual_tc_loss <- function(state){
 }
 
 multiple_states <- annual_tc_loss(example_states)
-one_state <- annual_tc_loss("Pará")
+one_state <- annual_tc_loss("Rio Grande Do Sul")
 
 multiple_states
 one_state

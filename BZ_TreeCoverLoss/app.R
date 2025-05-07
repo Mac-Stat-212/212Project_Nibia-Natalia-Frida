@@ -7,7 +7,7 @@ library(zoo)
 library(scales)
 library(bslib)
 
-tree_cover_loss <- read.csv('/Users/fridamorado/Desktop/Desktop - MacBook Air de Frida (2)/STAT212/212Project_Nibia-Natalia-Frida/data/raw/Brazil_TreeCoverLoss.csv')
+tree_cover_loss <- read.csv('~/Documents/STAT 212/Project/212Project_Nibia-Natalia-Frida/data/raw/Brazil_TreeCoverLoss.csv')
 
 brazil_outline <- geobr::read_country(year = 2010)
 states <- read_state(year = 2010, showProgress = FALSE)
@@ -123,7 +123,7 @@ ui <- page_navbar(
             )
   ),
   
-  nav_panel("Compare over time",
+  nav_panel("Tree cover loss per state",
             layout_sidebar(
               sidebar = sidebar(
                 selectInput("state", "Select state:", state_nameBR)
@@ -134,15 +134,11 @@ ui <- page_navbar(
   ),
   
   nav_panel("Political Leaning Plot",
-            layout_sidebar(
-              sidebar = sidebar(
-                sliderInput("year", "Select year:", min = 2000, max = 2023, value = 2012, step = 1)
-              ),
               layout_column_wrap(width = 1,
                                  plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot",),
-                                 h1("Stuff here"), p('a paragraph of text'))
+                                 p('a paragraph of text'))
             )
-  )
+  
 )
 
 server <- function(input, output) {

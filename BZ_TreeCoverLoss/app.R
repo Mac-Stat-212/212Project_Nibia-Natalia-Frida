@@ -111,6 +111,9 @@ state_loss <- data_long %>%
   arrange(year_tc) %>%
   mutate(roll_avg_3yr = rollmean(total_loss, k = 3, fill = NA, align = "right"))
 
+
+mapping_BR <- mapping_BR %>% st_as_sf()
+
 ui <- page_navbar(
   title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-",
   inverse = TRUE,
@@ -118,14 +121,14 @@ ui <- page_navbar(
   nav_panel("Explore",
             layout_sidebar(
               sidebar = sidebar(
-                sliderInput("year", "Select year:", min = 2000, max = 2023, value = 2012, step = 1)
+                sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = "")
               ),
               layout_column_wrap(width = 1,
-                                 plotOutput("map_State_tcl_by_municipality"))
+                                 plotOutput("tree_cover_map"), plotOutput("map_State_tcl_by_municipality"))
             )
   ),
   
-  nav_panel("Tree cover loss per state",
+  nav_panel("Compare over time",
             layout_sidebar(
               sidebar = sidebar(
                 selectInput("state", "Select state:", state_nameBR)
@@ -158,6 +161,20 @@ server <- function(input, output) {
       theme_minimal(base_size = 14) +
       theme(legend.position = "bottom", plot.title.position  = "plot", plot.title = element_text(hjust = 0.5, vjust = 1.2, margin = margin(t = 15))
         ) })
+  
+  output$tree_cover_map <- renderPlot({
+    col_name <- str_c("relative_extent_per_size", input$year)
+    
+    ggplot() +
+      geom_sf(data = brazil_outline, fill = 'black', color = "black", lwd = 0.3) +
+      geom_sf(data = mapping_BR, aes(fill = !!sym(col_name)), color = NA) +
+      scale_fill_gradient(low = "white", high = "#138030") +
+      labs(
+        title = paste("Relative Tree Cover in", input$year),
+        subtitle = "Tree cover relative to municipality area"
+      ) +
+      theme_void()
+  })
   
   output$map_State_tcl_by_municipality <- renderPlot({
     ggplot() +
@@ -197,3 +214,4 @@ server <- function(input, output) {
 
 
 shinyApp(ui = ui, server = server)
+

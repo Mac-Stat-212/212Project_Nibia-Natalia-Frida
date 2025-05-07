@@ -170,19 +170,28 @@ server <- function(input, output) {
   })
   
   output$line_STATE_tree_cover_loss <- renderPlot({
-    state_loss %>%
+    line_colors <- c("Loss in ha" = "darkgreen", "LM" = "red")
+    
+    p <- state_loss %>% 
       filter(name_state == input$state) %>%
       ggplot(aes(x = year_tc, y = total_loss)) +
-      geom_line(color = "gray70") +
-      geom_line(aes(y = roll_avg_3yr), color = "darkgreen", size = 1) +
-      geom_smooth(color = "red", method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
+      geom_line(aes(color = "Loss in ha")) +
+      # geom_line(aes(y = roll_avg_3yr, color = "Rolling Average"), size = 1) +
+      geom_smooth(aes(color = "LM"), method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
       scale_y_continuous(labels = label_number(scale = 1/1000, suffix = "k", accuracy = 1)) +
       labs(title = "Annual Tree Cover Loss in Select Brazilian States",
            subtitle = "With 3-year rolling average and linear trend line (2001–2023)",
            y = "Tree Cover Loss (thousands of ha)",
            x = "Year") +
+      scale_color_manual(values = line_colors) +
       theme_minimal()
+    
+    p
+    
   })
+  
 }
+
+
 
 shinyApp(ui = ui, server = server)

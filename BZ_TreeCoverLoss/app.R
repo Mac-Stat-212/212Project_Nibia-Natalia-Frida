@@ -141,8 +141,7 @@ ui <- page_navbar(
   nav_panel("Political Leaning Plot",
               layout_column_wrap(width = 1,
                                  plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot",),
-                                 p('<Select a point to see detailed information on an administration>'),
-                                 p('a paragraph of text'))
+                                 textOutput("point_info"))
             )
   
 )
@@ -187,6 +186,8 @@ server <- function(input, output) {
         subtitle = "Change only for municipalities with >20% tree cover in 2000.\nEmpty areas represent municipalities missing polygon data.",
         caption = 'Source: Global Forest Watch ; Missing values in black.') +
       theme_void()
+    
+    ggplotly(p, source = "tree_plot") %>% config(displayModeBar = FALSE)
   })
   
   output$line_STATE_tree_cover_loss <- renderPlot({
@@ -208,6 +209,31 @@ server <- function(input, output) {
     
     p
     
+  })
+  
+  output$point_info <- renderText({
+    click_data <- event_data("plotly_click", source = "tree_plot")
+    
+    if (is.null(click_data)) {
+      return("Click on a point to see detailed information.")
+    }
+    
+    # Extract year from clicked point
+    year_selected <- click_data$x
+    
+    # Find the corresponding president in the table
+    president_row <- presidents[year_selected >= presidents$start & year_selected <= presidents$end, ]
+    
+    if (nrow(president_row) == 0) {
+      return("No information available for the selected year.")
+    }
+    
+    # Construct the detailed message
+    paste0(
+      "In ", year_selected, ", the president of Brazil was ", president_row$president, 
+      " (", president_row$leaning, "-leaning administration). ", 
+      president_row$details
+    )
   })
   
 }

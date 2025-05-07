@@ -77,7 +77,8 @@ presidents <- tibble(
   name    = c("Fernando Henrique","Lula da Silva", "Dilma Rousseff","Michel Temer", "Jair Bolsonaro","Lula"),
   start = c(2000, 2003, 2011, 2016, 2019, 2023),
   end = c(2002, 2010, 2015, 2018, 2022, 2023),
-  leaning = c("Center/Right", "Left", "Left", "Center/Right", "Right", "Left")
+  leaning = c("Center/Right", "Left", "Left", "Center/Right", "Right", "Left"),
+  details = c("Henrique", "Lula 1", "Rousseff", "Temer", "Bolsonaro", "Lula 2")
 )
 
 pres_years <- presidents %>%

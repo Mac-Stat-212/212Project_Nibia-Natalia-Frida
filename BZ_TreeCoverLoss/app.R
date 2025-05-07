@@ -138,6 +138,7 @@ ui <- page_navbar(
   nav_panel("Political Leaning Plot",
               layout_column_wrap(width = 1,
                                  plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot",),
+                                 p('<Select a point to see detailed information on an administration>'),
                                  p('a paragraph of text'))
             )
   

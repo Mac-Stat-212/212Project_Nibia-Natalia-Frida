@@ -121,13 +121,15 @@ ui <- page_navbar(
   nav_panel("Explore Tree Cover Loss in Brazil",
             layout_sidebar(
               sidebar = sidebar(
-                sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = "")
+                sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = ""),
+                p("This paragraph explains the map and provides interpretation notes.")
               ),
               layout_column_wrap(width = 1,
-                                 plotOutput("tree_cover_map"), plotOutput("map_State_tcl_by_municipality"))
+                                 plotOutput("tree_cover_map"),
+                                 plotOutput("map_State_tcl_by_municipality")
+              )
             )
   ),
-  
   nav_panel("Compare over time",
             layout_sidebar(
               sidebar = sidebar(

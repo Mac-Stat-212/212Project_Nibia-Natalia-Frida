@@ -13,9 +13,7 @@ tree_cover_loss <- read.csv("../data/raw/Brazil_TreeCoverLoss.csv")
 brazil_outline <- geobr::read_country(year = 2010)
 states <- read_state(year = 2010, showProgress = FALSE)
 muni_sf <- read_municipality(year = 2010, showProgress = FALSE)
-
-state_nameBR <- states %>% pull(name_state) %>% unique() %>% 
-  setdiff(c("Rio De Janeiro", "Rio Grande Do Sul", "Rio Grande Do Norte", "Mato Grosso Do Sul", "Espirito Santo"))
+state_nameBR <- unique(states$name_state)
 
 tree_cover_loss_brazil <- tree_cover_loss %>%
   filter(country == "Brazil", threshold == 30) %>%
@@ -81,14 +79,7 @@ presidents <- tibble(
   start = c(2000, 2003, 2011, 2016, 2019, 2023),
   end = c(2002, 2010, 2015, 2018, 2022, 2023),
   leaning = c("Center/Right", "Left", "Left", "Center/Right", "Right", "Left"),
-  details = c("During Fernando Henrique Cardoso's double term (1995–2002), his administration, though center-right leaning, implemented several impactful environmental policies. Cardoso's government tripled the amount of protected Amazon rainforest areas, increased the legal reserve area for rural properties in the Amazon from 50% to 80%—a measure aimed at curbing deforestation—and positioned Brazil as an active participant in the creation of the Kyoto Protocol. However, during the last two years of his second term (2001–2002), rising commodity prices triggered an increase in deforestation. In 2001, deforestation reached 18,165 km², and in 2002, an electoral year, it surged to 21,651 km²—the highest rate recorded since measurements began. These developments highlight the complex interplay between environmental policy achievements and economic pressures during Cardoso's administration.
-", 
-              "During Luiz Inácio Lula Da Silva’s administration (two terms from 2003 to 2011), which was left leaning, Brazil achieved a remarkable 83% reduction in deforestation rates in the Amazon between 2004 and 2011. This success was primarily driven by the implementation of the Action Plan for Prevention and Control of Deforestation in the Legal Amazon (PPCDAm), a comprehensive initiative involving multiple ministries. The plan focused on expanding protected areas, enhancing remote monitoring with near-real-time deforestation tracking, and strengthening law enforcement to combat illegal logging. Under the leadership of Marina Silva, Minsiter of Environment until 2008, the government also introduced a blacklist of municipalities with the highest deforestation rates, targeting them with increased enforcement. The administration further restricted agricultural credit, linking access to compliance with environmental regulations, effectively deterring illegal land clearing. Lula’s government also recognized deforestation as environmental and socio-economic issue, gradually addressing its root causes, including rural credit policies and economic incentives. The political commitment from Lula and his cabinet, coupled with Marina Silva’s leadership, established a model of coordinated environmental governance that significantly curbed deforestation.
-", 
-              "Rousseff", 
-              "Temer", 
-              "Bolsonaro", 
-              "Lula 2")
+  details = c("Henrique", "Lula 1", "Rousseff", "Temer", "Bolsonaro", "Lula 2")
 )
 
 pres_years <- presidents %>%
@@ -131,7 +122,7 @@ ui <- page_navbar(
             layout_sidebar(
               sidebar = sidebar(
                 sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = ""),
-                p("This paragraph explains the map and provides interpretation notes.")
+                p("Paragraph")
               ),
               layout_column_wrap(width = 1,
                                  plotOutput("tree_cover_map"),
@@ -139,7 +130,7 @@ ui <- page_navbar(
               )
             )
   ),
-  nav_panel("Tree Cover Loss per State",
+  nav_panel("Compare over time",
             layout_sidebar(
               sidebar = sidebar(
                 selectInput("state", "Select state:", state_nameBR)
@@ -151,16 +142,17 @@ ui <- page_navbar(
   
   nav_panel("Political Leaning Plot",
               layout_column_wrap(width = 1,
-                                 plotlyOutput("line_COUNTRY_tree_cover_by_political_leaning_plot",),
-                                 textOutput("point_info"))
+                                 plotOutput("line_COUNTRY_tree_cover_by_political_leaning_plot",),
+                                 p('<Select a point to see detailed information on an administration>'),
+                                 p('a paragraph of text'))
             )
   
 )
 
 server <- function(input, output) {
-  output$line_COUNTRY_tree_cover_by_political_leaning_plot <- renderPlotly({
-    p <- ggplot() +
-      geom_rect(data = ribbons, aes(xmin = xmin, xmax = xmax, ymin = 0, ymax = y_max, fill = factor(ribbons$leaning)), alpha = 0.2, inherit.aes = FALSE) +
+  output$line_COUNTRY_tree_cover_by_political_leaning_plot <- renderPlot({
+    ggplot() +
+      geom_rect(data = ribbons, aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = +Inf, fill = factor(leaning)), alpha = 0.2) +
       geom_vline(data = ribbons, aes(xintercept = xmin), linetype = "dashed", color = "grey28") +
       geom_line(data = annual_loss, aes(x = year_tc, y = total_loss_k), size = 0.8, color = "black") +
       geom_point(data = annual_loss, aes(x = year_tc, y = total_loss_k), color = "black", size = 2) +
@@ -169,14 +161,8 @@ server <- function(input, output) {
       scale_x_continuous(breaks = presidents$start, labels = presidents$start) +
       labs(title = "Annual tree cover loss, with political leaning", x = "Year", y = "Loss (×1000 ha)") +
       theme_minimal(base_size = 14) +
-      theme(legend.position = "bottom", plot.title.position  = "plot", plot.title = element_text(hjust = 0.5, vjust = 1.2, margin = margin(t = 15)))
-    
-    p
-    
-    ggplotly(p, source = "tree_plot") %>% config(displayModeBar = FALSE)
-    
-    
-    })
+      theme(legend.position = "bottom", plot.title.position  = "plot", plot.title = element_text(hjust = 0.5, vjust = 1.2, margin = margin(t = 15))
+        ) })
   
   output$tree_cover_map <- renderPlot({
     col_name <- str_c("relative_extent_per_size", input$year)
@@ -186,7 +172,8 @@ server <- function(input, output) {
       geom_sf(data = mapping_BR, aes(fill = !!sym(col_name)), color = NA) +
       scale_fill_gradient(low = "white", high = "#138030") +
       labs(
-        title = paste("Relative Tree Cover in", input$year),
+        title = paste("Precentage Tree Cover per municipality in", input$year),
+        fill = "Percentage Tree Cover",
         subtitle = "Tree cover relative to municipality area", caption = 'Source: Global Forest Watch ; Missing values in black.'
       ) +
       theme_void()
@@ -223,27 +210,7 @@ server <- function(input, output) {
       theme_minimal()
     
     p
-  })
-  
-  output$point_info <- renderText({
-    click_data <- event_data("plotly_click", source = "tree_plot")
     
-    if (is.null(click_data)) {
-      return("Click on a point to see detailed information.")
-    }
-    
-    # Extract year from clicked point
-    year_selected <- click_data$x
-    
-    # Find the corresponding president in the table
-    president_row <- presidents[year_selected >= presidents$start & year_selected <= presidents$end, ]
-    
-    if (nrow(president_row) == 0) {
-      return("No information available for the selected year.")
-    }
-    
-    # Construct the detailed message
-    paste0(president_row$details)
   })
   
 }

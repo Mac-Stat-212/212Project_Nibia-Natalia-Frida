@@ -212,7 +212,6 @@ server <- function(input, output) {
       filter(name_state == input$state) %>%
       ggplot(aes(x = year_tc, y = total_loss)) +
       geom_line(aes(color = "Loss in ha")) +
-      # geom_line(aes(y = roll_avg_3yr, color = "Rolling Average"), size = 1) +
       geom_smooth(aes(color = "LM"), method = "lm", se = FALSE, linetype = "dashed", linewidth = 0.5) +
       scale_y_continuous(labels = label_number(scale = 1/1000, suffix = "k", accuracy = 1)) +
       labs(title = "Annual Tree Cover Loss in Select Brazilian States",

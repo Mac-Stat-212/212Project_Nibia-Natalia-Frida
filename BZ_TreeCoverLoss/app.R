@@ -123,18 +123,27 @@ state_loss <- data_long %>%
 mapping_BR <- mapping_BR %>% st_as_sf()
 
 ui <- page_navbar(
-  title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-",
+  title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-2023",
   inverse = TRUE,
   
-  nav_panel("Explore Tree Cover Loss in Brazil",
+  nav_panel("Explore Tree Cover in Brazil",
             layout_sidebar(
               sidebar = sidebar(
                 sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = ""),
                 p("This paragraph explains the map and provides interpretation notes.")
               ),
               layout_column_wrap(width = 1,
-                                 plotOutput("tree_cover_map"),
-                                 plotOutput("map_State_tcl_by_municipality")
+                                 plotOutput("tree_cover_map")
+              )
+            )
+  ),
+  nav_panel("Tree Cover Loss 2000-2020",
+            layout_sidebar(
+              sidebar = sidebar(
+                p("This paragraph explains the map and provides interpretation notes.")
+              ),
+              layout_column_wrap(width = 1,
+                                 plotOutput("map_tree_cover_loss_map")
               )
             )
   ),
@@ -196,7 +205,7 @@ server <- function(input, output) {
   
   })
   
-  output$map_State_tcl_by_municipality <- renderPlot({
+  output$map_tree_cover_loss_map <- renderPlot({
     ggplot() +
       geom_sf(data = brazil_outline, fill = 'black', color = "black", lwd = 0.3) +
       geom_sf(data = mapping_BR, aes(fill = actualChange, geometry = geom), lwd = 0.02,na.rm=FALSE) + 
@@ -206,6 +215,7 @@ server <- function(input, output) {
         subtitle = "Change only for municipalities with >20% tree cover in 2000.\nEmpty areas represent municipalities missing polygon data.",
         caption = 'Source: Global Forest Watch ; Missing values in black.') +
       theme_void()
+    
   })
   
   output$line_STATE_tree_cover_loss <- renderPlot({

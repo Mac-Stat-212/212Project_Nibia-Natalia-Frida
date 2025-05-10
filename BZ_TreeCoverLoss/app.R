@@ -141,7 +141,10 @@ ui <- page_navbar(
   nav_panel("Tree cover loss per state",
             layout_sidebar(
               sidebar = sidebar(
-                selectInput("state", "Select state:", state_nameBR)
+                selectInput("state", "Select state:", state_nameBR),
+                p("Some states are more significant than others when talking about tree cover loss and the Amazon tropical rainforest. States like Distrito Federal are very small and urban, so the trend line appears to be almost a straight horizontal line, showing no change in tree cover loss. Other states such as Sao Paulo and Mina Gerais even show a decrease in tree cover loss, but it is important to note that these include the Triângulo Mineiro (Minas Triangle) in the west is characterized by cerrado, a type of savanna.
+However, states that contain a significant portion of the rainforest such as Amazonas, Roraima, Pará, and others, do see a constant increase in tree cover loss. This emphasizes the direct impact of the national tree cover loss in Brazil on the Amazon tropical rainforest.
+")
               ),
               layout_column_wrap(width = 1,
                                  plotOutput("line_STATE_tree_cover_loss"))

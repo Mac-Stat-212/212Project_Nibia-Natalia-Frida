@@ -27,7 +27,7 @@ Each tab includes explanatory text that walks the  users through each of the vis
 
 File Location of digital artifact: app.R
 
-Shiny link: TBD <http://shinyapps.io/fillin>
+Shiny link: TBD <https://fridam.shinyapps.io/bz_treecoverloss/>
 
 ## Data
 

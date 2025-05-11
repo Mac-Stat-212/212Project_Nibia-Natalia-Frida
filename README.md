@@ -41,4 +41,4 @@ Kreier, F. (2022). Tropical forests have big climate benefits beyond carbon stor
 
 Pan, Y., Birdsey, R. A., Fang, J., Houghton, R., Kauppi, P. E., Kurz, W. A., Phillips, O. L., Shvidenko, A., Lewis, S. L., Canadell, J. G., Ciais, P., Jackson, R. B., Pacala, S. W., McGuire, A. D., Piao, S., Rautiainen, A., Sitch, S., & Hayes, D. (2011). A Large and Persistent Carbon Sink in the World’s Forests. Science, 333(6045), 988-993. https://doi.org/10.1126/science.1201609
 
-Link to raw data used: include a link to a drive folder of raw data that isn't part of the Github Repo
+Link to raw data used: (https://drive.google.com/drive/folders/11Tmc11gzEgCrDSnunr_119fgAJUG4L5a?usp=drive_link)

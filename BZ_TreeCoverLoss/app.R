@@ -124,7 +124,7 @@ ui <- page_navbar(
   title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-2023",
   inverse = TRUE,
   
-  nav_panel("Explore Tree Cover in Brazil",
+  nav_panel("National Tree Cover",
             layout_sidebar(
               sidebar = sidebar(
                 sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = ""),
@@ -135,7 +135,7 @@ ui <- page_navbar(
               )
             )
   ),
-  nav_panel("Tree Cover Loss 2000-2020",
+  nav_panel("Extent Change",
             layout_sidebar(
               sidebar = sidebar(
                 p("This paragraph explains the map and provides interpretation notes.")
@@ -145,7 +145,7 @@ ui <- page_navbar(
               )
             )
   ),
-  nav_panel("Tree cover loss per state",
+  nav_panel("Per State",
             layout_sidebar(
               sidebar = sidebar(
                 selectInput("state", "Select state:", state_nameBR),
@@ -158,7 +158,7 @@ However, states that contain a significant portion of the rainforest such as Ama
             )
   ),
   
-  nav_panel("Political Leaning Plot",
+  nav_panel("Political Leanings",
               layout_column_wrap(width = 1,
                                  plotlyOutput("line_COUNTRY_tree_cover_by_political_leaning_plot",),
                                  textOutput("point_info"))

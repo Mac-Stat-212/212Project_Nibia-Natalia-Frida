@@ -32,6 +32,7 @@ Shiny link: <https://fridam.shinyapps.io/bz_treecoverloss/>
 ## Data 
 
 Sources: 
+
 Almeida-Rocha, J. M. D., & Peres, C. A. (2021). Nominally protected buffer zones around tropical protected areas are as highly degraded as the wider unprotected countryside. Biological Conservation, 256, 109068. https://doi.org/10.1016/j.biocon.2021.109068
 Jackson, R. B., Lajtha, K., Crow, S. E., Hugelius, G., Kramer, M. G., & Piñeiro, G. (2017). The Ecology of Soil Carbon: Pools, Vulnerabilities, and Biotic and Abiotic Controls. Annual Review of Ecology, Evolution, and Systematics, 48(1), 419-445. https://doi.org/10.1146/annurev-ecolsys-112414-054234
 Kreier, F. (2022). Tropical forests have big climate benefits beyond carbon storage. Nature, d41586-022-00934-00936. https://doi.org/10.1038/d41586-022-00934-6

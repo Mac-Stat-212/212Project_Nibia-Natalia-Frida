@@ -2,7 +2,7 @@
 
 ## Authors
 
-[Natalia Morales], [Nibia Santillan](https://nbs2809.github.io/Nibia/), [Frida Morado]()
+[Natalia Morales](https://nbmoralesf.github.io/), [Nibia Santillan](https://nbs2809.github.io/Nibia/), [Frida Morado]()
 
 ## Research Questions
 
@@ -21,7 +21,7 @@ The second tab presents annual tree cover loss for each state.
 Users can select the state to visualize annual tree cover loss from 2001 to 2023, smoothed using a 3-year rolling average.
 
 The third tab shows national annual tree cover loss over time, with colored rectangles indicating the political leaning of each administration.
-This tab helps contextualizes environmental changes alongside shifts in governance.
+This tab helps contextualize environmental changes alongside shifts in governance.
 
 Each tab includes explanatory text that walks the  users through each of the visualizations and provides the necessary context.
 
@@ -29,8 +29,8 @@ File Location of digital artifact: app.R
 
 Shiny link: TBD <https://fridam.shinyapps.io/bz_treecoverloss/>
 
-## Data
+## Data 
 
-Sources:
+Sources: 
 
 Link to raw data used: include a link to a drive folder of raw data that isn't part of the Github Repo

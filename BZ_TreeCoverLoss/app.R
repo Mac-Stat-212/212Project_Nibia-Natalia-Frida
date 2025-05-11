@@ -16,6 +16,7 @@ muni_sf <- read_municipality(year = 2010, showProgress = FALSE)
 state_nameBR <- states %>% pull(name_state) %>% unique() %>% 
   setdiff(c("Rio De Janeiro", "Rio Grande Do Sul", "Rio Grande Do Norte", "Mato Grosso Do Sul", "Espirito Santo"))
 
+
 tree_cover_loss_brazil <- tree_cover_loss %>%
   filter(country == "Brazil", threshold == 30) %>%
   select(-country, -threshold) %>%
@@ -128,7 +129,9 @@ ui <- page_navbar(
             layout_sidebar(
               sidebar = sidebar(
                 sliderInput("year", "Select year for Relative Tree Cover (ha):", min = 2000, max = 2020, value = 2000, step = 10, sep = ""),
-                p("This paragraph explains the map and provides interpretation notes.")
+                p("Tropical forests like the Amazon are critical regulators of Earth’s climate, storing one-quarter of all terrestrial carbon (Pan et al., 2011; Griscom, B cited by Kreir, F 2022)). Forests cycle large quantities of greenhouse gases through vegetation and soils from and into the atmosphere, stabilizing the atmospheric concentration of these gasses (Jackson et al., 2017). A particularly important feature of these forests is their role in climate mitigation due to their capacity to store more carbon dioxide than that they release, making up for some of the human-made CO2 emissions. This capacity diminishes as the tree density decreases both due to the loss of trees and the alteration of the soils when trees are removed. 
+In this project, we focus on Brazil, the country that contains the majority of the Amazon Basin ecosystem. We examine tree cover as the proportion of a municipality’s area (the smallest geographic division in Brazil) that is covered by trees. Our dataset begins in the year 2000, using data from Global Forest Watch. Big differences in tree cover across regions and municipalities may reflect natural ecosystem variability.
+")
               ),
               layout_column_wrap(width = 1,
                                  plotOutput("tree_cover_map")
@@ -141,7 +144,7 @@ ui <- page_navbar(
                 p("This paragraph explains the map and provides interpretation notes.")
               ),
               layout_column_wrap(width = 1,
-                                 plotOutput("map_tree_cover_loss_map")
+                                 plotOutput("map_tree_cover_loss_map")  
               )
             )
   ),
@@ -211,9 +214,8 @@ server <- function(input, output) {
       labs(
         title = "Brazil Tree Cover Extent Change from 2000–2020 by Municipality",
         subtitle = "Change only for municipalities with >20% tree cover in 2000.\nEmpty areas represent municipalities missing polygon data.",
-        caption = 'Source: Global Forest Watch ; Missing values in black.') +
+        caption = 'Source: ; Missing values in light yellow.') +
       theme_void()
-    
   })
   
   output$line_STATE_tree_cover_loss <- renderPlot({

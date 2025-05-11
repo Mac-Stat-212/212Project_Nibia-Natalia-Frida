@@ -141,7 +141,10 @@ In this project, we focus on Brazil, the country that contains the majority of t
   nav_panel("Extent Change",
             layout_sidebar(
               sidebar = sidebar(
-                p("This paragraph explains the map and provides interpretation notes.")
+                p("This graph shows changes in tree cover from 2000 to 2020, categorized by the degree of gain or loss relative to each municipality’s area. A large proportional gain or loss indicates a change of around 20% of the municipality’s total area, while extreme proportional loss refers to losses greater than 20%.
+
+	The visible decrease in tree cover in areas surrounding protected zones in the Amazon Basin reflects broader failures in the enforcement of environmental laws in Brazil. Research shows that these adjacent areas are particularly vulnerable, as they offer easier access to natural resources and face higher risk when environmental policies are weakly enforced or poorly implemented (Almeida-Rocha & Peres, 2021). For instance, illegal deforestation for timber often occurs along the edges of the Amazon, where access is easier and infrastructure allows for more consistent activity. When government funding and enforcement are lacking, these border areas become the easiest targets. This pattern of degradation underscores how political priorities can directly shape the effectiveness of conservation efforts.
+")
               ),
               layout_column_wrap(width = 1,
                                  plotOutput("map_tree_cover_loss_map")  

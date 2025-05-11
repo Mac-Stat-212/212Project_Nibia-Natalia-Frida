@@ -7,16 +7,19 @@ library(zoo)
 library(scales)
 library(bslib)
 
-#tree_cover_loss <- read.csv('/Users/fridamorado/Desktop/Desktop - MacBook Air de Frida (2)/STAT212/212Project_Nibia-Natalia-Frida/data/raw/Brazil_TreeCoverLoss.csv')
+# Loading data
 tree_cover_loss <- read.csv("data/raw/Brazil_TreeCoverLoss.csv")
 
+# Loading shapefiles for Brazil at the national, state, and municipality levels
 brazil_outline <- geobr::read_country(year = 2010)
 states <- read_state(year = 2010, showProgress = FALSE)
 muni_sf <- read_municipality(year = 2010, showProgress = FALSE)
+
+# List of Brazilian states for dropdown input
 state_nameBR <- states %>% pull(name_state) %>% unique() %>% 
   setdiff(c("Rio De Janeiro", "Rio Grande Do Sul", "Rio Grande Do Norte", "Mato Grosso Do Sul", "Espirito Santo"))
 
-
+# Load and clean tree cover loss data for Brazil 
 tree_cover_loss_brazil <- tree_cover_loss %>%
   filter(country == "Brazil", threshold == 30) %>%
   select(-country, -threshold) %>%
@@ -26,6 +29,7 @@ tree_cover_loss_brazil <- tree_cover_loss %>%
     name_muni = subnational2
   )
 
+# Merge cleaned tree cover data with shapefiles and perform calculations on tree cover change
 mapping_BR <- tree_cover_loss_brazil %>%
   left_join(muni_sf, by = "name_muni") %>%
   rename(name_state = subnational1) %>%
@@ -38,6 +42,7 @@ mapping_BR <- tree_cover_loss_brazil %>%
     relative_change_2000_2020 = relative_extent_per_size2020 - relative_extent_per_size2000
   )
 
+# Classify proportional tree cover change from each municipality
 classify_change <- function(change, cover2000) {
   case_when(
     is.na(change) ~ "No data available",
@@ -52,6 +57,7 @@ classify_change <- function(change, cover2000) {
   )
 }
 
+# Organize the order of the factor levels for the map legend
 mapping_BR <- mapping_BR %>%
   mutate(actualChange = classify_change(relative_change_2000_2020, relative_extent_per_size2000)) %>%
   mutate(actualChange = factor(actualChange, levels = c(
@@ -72,10 +78,12 @@ custom_colors <- c(
   "No data available"= "#000000"
 )
 
+# Pivot longer for plotting
 mapping_BR_leanings <- mapping_BR %>%
   pivot_longer(cols = starts_with("tc_loss_ha_"), names_to = "year_tc", values_to = "loss_ha") %>%
   mutate(year_tc = parse_number(year_tc), loss_k = loss_ha / 1000)
 
+# Create dataset of Brazilian presidents, their political leanings and information for each
 presidents <- tibble(
   name    = c("Fernando Henrique","Lula da Silva", "Dilma Rousseff","Michel Temer", "Jair Bolsonaro","Lula"),
   start = c(2000, 2003, 2011, 2016, 2019, 2023),
@@ -95,6 +103,7 @@ pres_years <- presidents %>%
   unnest(year_tc) %>%
   select(name, year_tc, leaning)
 
+# Link tree cover loss with political leaning data
 annual_loss <- mapping_BR_leanings %>%
   left_join(pres_years, by = "year_tc") %>%
   group_by(year_tc, name, leaning) %>%
@@ -106,6 +115,7 @@ ribbons <- presidents %>%
   mutate(xmin    = start - 0.5 , xmax    = end + 0.5, xmid = (start + end) / 2) %>%
   select(xmin, xmax, xmid, name, leaning)
 
+# Reshape and summarize data to calculate the 3-year rolling average of tree cover loss per state
 data_long <- mapping_BR %>%
   select(name_state, name_muni, area_ha, starts_with("tc_loss_ha_"), geom) %>%
   pivot_longer(cols = starts_with("tc_loss_ha_"), names_to = "year_tc", values_to = "loss_ha") %>%
@@ -121,9 +131,40 @@ state_loss <- data_long %>%
 
 mapping_BR <- mapping_BR %>% st_as_sf()
 
+# Define the Shiny app UI. Includes 4 tabs: About the project, National Tree Cover, State Trends and Political Leanings. 
+
 ui <- page_navbar(
-  title = "Presidential Political Leaning and Tree Cover Loss in Brazil 2000-2023",
+  title = "Deforestation and political shifts in Brazil (2000–2023)",
   inverse = TRUE,
+  
+  nav_panel("About This Project",
+                               h3("About This Project"),
+                               h4("Importance of the Amazon"),
+                               p("The Amazon is one of the planet's most vital ecosystems, spanning over 8 million square kilometers and housing around 30% of the world’s biodiversity. Brazil holds the largest share of this rainforest, with 60% of the Amazon falling within its borders. As a tropical forest, the Amazon plays a crucial role in regulating Earth’s climate, storing about one-quarter of all land-based carbon (Pan et al., 2011; Griscom, B., as cited by Kreir, F., 2022). It accomplishes this by cycling greenhouse gases between vegetation, soil, and the atmosphere, helping to maintain stable atmospheric gas concentrations (Jackson et al., 2017). This carbon storage capacity is a key factor in climate change models, which rely heavily on forests acting as carbon sinks. However, with one-third of tropical forests lost to deforestation in recent centuries (Kreier, F., 2022), the rapid decline in forest carbon storage is alarming. Given the Amazon's critical role as a carbon sink, understanding the political and policy factors driving deforestation is essential."),
+                               h4("Research questions"),
+                               p("Our project focuses on two main questions. First, how has tree cover in Brazil changed from 2000 to 2023? Second, does the political leaning of an administration help explain some of these patterns? By analyzing deforestation trends under different political administrations, we aim to determine whether governments of varying political leanings are associated with higher or lower rates of deforestation."),
+                               h4("Motivation"),
+                               p("On an individual level, we all found meaningful connections with this topic."),
+                               p("Nibia’s research work in a tropical forest for the last two summers allowed her to engage with both the environmental and social relevance of preserving these ecosystems. She is very passionate about climate mitigation action and democratizing information in the Global South."),
+                               p("Natalia is a Political Science major. She grew up in a very biodiverse country, which encouraged her to be interested in understanding what protects and harms these spaces. She has taken courses and done research on Latin American politics and wanted to expand the areas she looked at by starting with environmental policies."),
+                               p("Frida was drawn to this topic due to her interest in sustainable finance and environmental policy, especially in Latin America. During her summer internship, she worked with clients across Latin America, many of them from Brazil, which sparked an interest around the country’s environmental challenges and its crucial role in South American climate efforts. She has also been taking Brazilian Portuguese classes in order to better engage with a wide variety of stakeholders in Brazil and be able to read academic literature in the language. In the future, she hopes to work at the intersection of economics and environmental policy, and this project offered a unique opportunity to explore those dynamics."),
+                               
+                               h4("Data"),
+                               p("For this project, we used tree cover and deforestation data from Global Forest Watch (GFW), an open-access platform developed by the World Resources Institute in partnership with the University of Maryland’s GLAD lab and Google. GFW provides near real-time data on forest change, including tree cover extent, deforestation rates, and associated CO₂ emissions. We focused on data for Brazil from 2000 to 2023 to examine spatial forest loss at the municipality level."),
+                               
+                               h4("Key findings"),
+                               p("The analysis demonstrates a clear link between the political leaning of Brazilian administrations and deforestation rates in the Amazon. Left-leaning governments (Lula and Rousseff) generally exhibited stronger environmental policies and lower deforestation rates, while right-leaning administrations (Temer and Bolsonaro) were associated with higher deforestation due to deregulation and favoring agribusiness interests. Key policies, such as the Action Plan for Prevention and Control of Deforestation in the Legal Amazon (PPCDAm), played a critical role in reducing deforestation during the Lula and early Rousseff administrations. Conversely, the weakening of environmental agencies under Temer and Bolsonaro led to a sharp increase in deforestation."),
+                               
+                               h4(" Limitations"),
+                               p("This analysis has several limitations that should be considered when interpreting the findings. First, the analysis focuses primarily on political leadership, potentially overlooking other influential factors such as global commodity prices, international pressure, and the effectiveness of local governance. Data limitations also exist, as the study relies on deforestation data that may contain measurement gaps or fail to capture smaller-scale forest clearings. Finally, there is a temporal mismatch between policy changes and their impact on deforestation, as deforestation often responds to policies with a delay."),
+                               
+                               h4("Future directions"),
+                               p("Future research could address these limitations by incorporating a broader range of socioeconomic factors to better understand their interaction with political ideologies. Further analysis should also evaluate the enforcement of environmental policies, and a regional analysis could provide insights into how state and municipal governments, with varying political dynamics, influence deforestation rates. Additionally, a focused study on the protection of Indigenous lands would help clarify the role of legal protections and enforcement in preserving forest cover. Finally, future research could explore the interactions between deforestation, rising temperatures, drought conditions, and their combined impact on Amazon forest resilience, helping to anticipate potential tipping points."),
+                               
+                               h5("Authors"),
+                               p("Nibia Becerra Santillan, Natalia Morales Flores and Frida Morado Salazar"),
+                               p("Professor Brianna Heggeseth")
+  ),
   
   nav_panel("National Tree Cover",
             layout_sidebar(
@@ -134,11 +175,11 @@ In this project, we focus on Brazil, the country that contains the majority of t
 ")
               ),
               layout_column_wrap(width = 1,
-                                 plotOutput("tree_cover_map")
-              )
+                                 plotOutput("tree_cover_map"))
             )
   ),
-  nav_panel("Extent Change",
+  
+  nav_panel("Tree Cover Extent Change",
             layout_sidebar(
               sidebar = sidebar(
                 p("This graph shows changes in tree cover from 2000 to 2020, categorized by the degree of gain or loss relative to each municipality’s area. A large proportional gain or loss indicates a change of around 20% of the municipality’s total area, while extreme proportional loss refers to losses greater than 20%.
@@ -147,11 +188,11 @@ In this project, we focus on Brazil, the country that contains the majority of t
 ")
               ),
               layout_column_wrap(width = 1,
-                                 plotOutput("map_tree_cover_loss_map")  
-              )
+                                 plotOutput("map_tree_cover_loss_map"))  
             )
   ),
-  nav_panel("Per State",
+  
+  nav_panel("State Trends",
             layout_sidebar(
               sidebar = sidebar(
                 selectInput("state", "Select state:", state_nameBR),
@@ -165,13 +206,14 @@ However, states that contain a significant portion of the rainforest such as Ama
   ),
   
   nav_panel("Political Leanings",
-              layout_column_wrap(width = 1,
-                                 plotlyOutput("line_COUNTRY_tree_cover_by_political_leaning_plot",),
-                                 textOutput("point_info"))
-            )
-  
+            layout_column_wrap(width = 1,
+                               plotlyOutput("line_COUNTRY_tree_cover_by_political_leaning_plot"),
+                               textOutput("point_info"))
+  )
 )
 
+
+# Creates annual tree cover loss with political leaning plot 
 server <- function(input, output) {
   output$line_COUNTRY_tree_cover_by_political_leaning_plot <- renderPlotly({
     p <- ggplot() +
@@ -193,6 +235,7 @@ server <- function(input, output) {
     
     })
   
+# Creates tree cover map, in which the user selects a year between 2000, 2010 and 2020
   output$tree_cover_map <- renderPlot({
     col_name <- str_c("relative_extent_per_size", input$year)
     
@@ -201,7 +244,7 @@ server <- function(input, output) {
       geom_sf(data = mapping_BR, aes(fill = !!sym(col_name)), color = NA) +
       scale_fill_gradient(low = "white", high = "#138030") +
       labs(
-        title = paste("Precentage Tree Cover per municipality in", input$year),
+        title = paste("Percentage Tree Cover per municipality in", input$year),
         fill = "Percentage Tree Cover",
         subtitle = "Tree cover relative to municipality area", caption = 'Source: Global Forest Watch ; Missing values in black.'
       ) +
@@ -209,6 +252,7 @@ server <- function(input, output) {
   
   })
   
+# Creates tree cover extent change plot from 2000 to 2020 
   output$map_tree_cover_loss_map <- renderPlot({
     ggplot() +
       geom_sf(data = brazil_outline, fill = 'black', color = "black", lwd = 0.3) +
@@ -217,10 +261,11 @@ server <- function(input, output) {
       labs(
         title = "Brazil Tree Cover Extent Change from 2000–2020 by Municipality",
         subtitle = "Change only for municipalities with >20% tree cover in 2000.\nEmpty areas represent municipalities missing polygon data.",
-        caption = 'Source: ; Missing values in light yellow.') +
+        caption = 'Source: Global Forest Watch; Missing values in light yellow.') +
       theme_void()
   })
   
+# Creates annual tree cover loss plot with 3-year rolling average 
   output$line_STATE_tree_cover_loss <- renderPlot({
     line_colors <- c("Loss in ha" = "darkgreen", "LM" = "red")
     
@@ -241,29 +286,21 @@ server <- function(input, output) {
     
   })
   
-
+# Makes political leaning plot interactive
   output$point_info <- renderText({
-    
     click_data <- event_data("plotly_click", source = "tree_plot")
-    
     if (is.null(click_data)) {
       return("Click on a point to see detailed information.")
     }
-    
-    # Extract year from clicked point
     year_selected <- click_data$x
-    
-    # Find the corresponding president in the table
     president_row <- presidents[year_selected >= presidents$start & year_selected <= presidents$end, ]
     
     if (nrow(president_row) == 0) {
       return("No information available for the selected year.")
     }
-
-    paste0(president_row$details)
     
+    paste0(president_row$details)
   })
-  
   
 }
 

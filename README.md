@@ -11,21 +11,18 @@
 - What associations, if any, exist between the political leaning of the national administration and annual tree cover loss in Brazil?
 
 ## Deliverable
-Our planned digital artifact is a Shiny App designed to explore the relationship between tree cover loss and political leanings in Brazil.
-The app features three main interactive visualizations.
 
-The first tab displays a map of Brazil showing changes in tree cover extent from 2000 to 2020, showing the percentage of tree cover per municipality and the relative change in tree cover extent from 2000 to 2020.
-Users can select the year to observe the trends across three time periods: 2000, 2010 and 2020. 
+Our planned digital artifact is a Shiny App designed to explore the relationship between tree cover loss and political leanings in Brazil. The app features an About tab and four main interactive visualizations.
 
-The second tab presents annual tree cover loss for each state.
-Users can select the state to visualize annual tree cover loss from 2001 to 2023, smoothed using a 3-year rolling average.
+The first tab displays the About section of the project. The second tab displays a map of Brazil showing the percentage of tree cover per municipality and the relative change in tree cover extent from 2000 to 2020. Users can select the year to observe the trends across three time periods: 2000, 2010, and 2020. 
 
-The third tab shows national annual tree cover loss over time, with colored rectangles indicating the political leaning of each administration.
-This tab helps contextualize environmental changes alongside shifts in governance.
+The third tab shows changes in tree cover from 2000 to 2020, categorized by the degree of gain or loss relative to each municipality’s area. The fourth tab presents annual tree cover loss for each state. Users can select the state to visualize annual tree cover loss from 2001 to 2023, smoothed using a 3-year rolling average.
 
-Each tab includes explanatory text that walks the  users through each of the visualizations and provides the necessary context.
+Finally, the fifth tab shows national annual tree cover loss over time, with colored rectangles indicating the political leaning of each administration. This tab helps contextualize environmental changes alongside shifts in governance.
 
-File Location of digital artifact: app.R
+Each tab includes explanatory text that walks the users through the visualizations and provides the necessary context.
+
+File Location of digital artifact: FINAL_ShinyApp/app.R
 
 Shiny link: <https://fridam.shinyapps.io/bz_treecoverloss/>
 

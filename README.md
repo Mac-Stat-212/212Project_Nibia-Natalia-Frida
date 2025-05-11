@@ -2,7 +2,7 @@
 
 ## Authors
 
-[Natalia Morales](https://nbmoralesf.github.io/), [Nibia Santillan](https://nbs2809.github.io/Nibia/), [Frida Morado]()
+[Natalia Morales](https://nbmoralesf.github.io/), [Nibia Becerra](https://nbs2809.github.io/Nibia/), [Frida Morado]()
 
 ## Research Questions
 
